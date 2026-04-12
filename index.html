@@ -1,0 +1,1323 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sensus Jejaring Literasi — Asosiasi Perpustakaan Independen Bandung</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --cream: #F5F0E8;
+    --ink: #1A1410;
+    --ink-mid: #3D3228;
+    --ink-light: #7A6D5E;
+    --ink-faint: #B5A898;
+    --rust: #B84C2A;
+    --rust-light: #E8795A;
+    --rust-pale: #F5E0D8;
+    --teal: #2A6B5E;
+    --teal-light: #4A9B8A;
+    --teal-pale: #D8EDEA;
+    --gold: #C4892A;
+    --gold-pale: #F5EDDA;
+    --violet: #5A3A8A;
+    --violet-light: #8A6AB8;
+    --violet-pale: #EDE6F5;
+    --border: rgba(26,20,16,0.12);
+    --border-strong: rgba(26,20,16,0.22);
+    --shadow: 0 2px 16px rgba(26,20,16,0.08);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 0;
+  }
+
+  /* ── HEADER ── */
+  .site-header {
+    position: relative; z-index: 1;
+    background: var(--ink); color: var(--cream);
+    padding: 3rem 2rem 0; overflow: hidden;
+  }
+
+  .site-header::before {
+    content: ''; position: absolute;
+    top: -60px; right: -60px; width: 320px; height: 320px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(184,76,42,0.25) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .site-header::after {
+    content: ''; position: absolute;
+    bottom: -40px; left: 40px; width: 200px; height: 200px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(42,107,94,0.2) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .header-inner { max-width: 720px; margin: 0 auto; position: relative; z-index: 1; }
+
+  .header-eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 11px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--rust-light); margin-bottom: 1rem;
+  }
+  .header-eyebrow::before {
+    content: ''; display: inline-block;
+    width: 24px; height: 1.5px; background: var(--rust-light);
+  }
+
+  .header-title {
+    font-family: 'Lora', serif;
+    font-size: clamp(1.8rem, 5vw, 2.8rem); font-weight: 600;
+    line-height: 1.2; color: var(--cream); margin-bottom: 1rem;
+  }
+  .header-title em { font-style: italic; color: var(--rust-light); }
+
+  .header-meta {
+    display: flex; flex-wrap: wrap; gap: 1.5rem;
+    margin-top: 1.5rem; padding-top: 1.5rem;
+    border-top: 1px solid rgba(245,240,232,0.12);
+  }
+  .meta-item { font-size: 13px; color: rgba(245,240,232,0.55); display: flex; align-items: center; gap: 6px; }
+  .meta-item strong { color: rgba(245,240,232,0.85); font-weight: 500; }
+  .meta-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--rust-light); flex-shrink: 0; }
+
+  /* ── SWITCHER ── */
+  .switcher-wrap {
+    position: relative; z-index: 1;
+    background: var(--ink);
+    padding: 1.5rem 2rem 0;
+  }
+
+  .switcher-inner { max-width: 720px; margin: 0 auto; }
+
+  .switcher-label {
+    font-size: 11px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase;
+    color: rgba(245,240,232,0.45); margin-bottom: 0.75rem;
+  }
+
+  .switcher-tabs {
+    display: flex; gap: 0;
+    border-radius: 12px 12px 0 0;
+    overflow: hidden;
+    border: 1px solid rgba(245,240,232,0.12);
+    border-bottom: none;
+  }
+
+  .tab-btn {
+    flex: 1; padding: 0.85rem 1.25rem;
+    background: rgba(255,255,255,0.05);
+    border: none; cursor: pointer;
+    font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500;
+    color: rgba(245,240,232,0.45);
+    transition: background 0.2s, color 0.2s;
+    text-align: left;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .tab-btn:first-child { border-right: 1px solid rgba(245,240,232,0.1); }
+
+  .tab-btn.active {
+    background: var(--cream);
+    color: var(--ink);
+  }
+
+  .tab-btn .tab-icon {
+    width: 22px; height: 22px; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; flex-shrink: 0;
+  }
+
+  .tab-btn:first-child .tab-icon { background: var(--rust-pale); color: var(--rust); }
+  .tab-btn:last-child .tab-icon { background: var(--teal-pale); color: var(--teal); }
+  .tab-btn.active:first-child .tab-icon { background: var(--rust-pale); }
+  .tab-btn.active:last-child .tab-icon { background: var(--teal-pale); }
+
+  .tab-sub { font-size: 11px; font-weight: 400; opacity: 0.6; display: block; margin-top: 1px; }
+
+  /* ── PROGRESS ── */
+  .progress-bar-wrap { position: sticky; top: 0; z-index: 100; background: var(--ink); }
+  .progress-bar {
+    height: 3px; width: 0%;
+    transition: width 0.4s ease;
+  }
+  .progress-bar.perpus { background: linear-gradient(90deg, var(--rust), var(--rust-light)); }
+  .progress-bar.komunitas { background: linear-gradient(90deg, var(--teal), var(--teal-light)); }
+
+  /* ── MAIN ── */
+  .main { max-width: 720px; margin: 0 auto; padding: 2.5rem 1.5rem 5rem; position: relative; z-index: 1; }
+
+  .form-panel { display: none; }
+  .form-panel.active { display: block; }
+
+  /* ── SECTION ── */
+  .form-section {
+    margin-bottom: 2rem;
+    opacity: 0; transform: translateY(20px);
+    animation: fadeUp 0.5s ease forwards;
+  }
+  @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
+
+  .form-section:nth-child(1) { animation-delay: 0.05s; }
+  .form-section:nth-child(2) { animation-delay: 0.10s; }
+  .form-section:nth-child(3) { animation-delay: 0.15s; }
+  .form-section:nth-child(4) { animation-delay: 0.20s; }
+  .form-section:nth-child(5) { animation-delay: 0.25s; }
+  .form-section:nth-child(6) { animation-delay: 0.30s; }
+  .form-section:nth-child(7) { animation-delay: 0.35s; }
+  .form-section:nth-child(8) { animation-delay: 0.40s; }
+
+  .section-header { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 1.25rem; }
+
+  .section-badge {
+    width: 36px; height: 36px; border-radius: 8px;
+    background: var(--ink); color: var(--cream);
+    font-family: 'Lora', serif; font-size: 15px; font-weight: 600;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 2px;
+  }
+  .section-badge.rust { background: var(--rust); }
+  .section-badge.teal { background: var(--teal); }
+  .section-badge.gold { background: var(--gold); }
+  .section-badge.violet { background: var(--violet); }
+
+  .section-titles { flex: 1; }
+  .section-title { font-family: 'Lora', serif; font-size: 1.15rem; font-weight: 600; color: var(--ink); line-height: 1.3; }
+  .section-desc { font-size: 13px; color: var(--ink-light); margin-top: 3px; }
+
+  .section-body {
+    background: white; border: 1px solid var(--border);
+    border-radius: 16px; padding: 1.5rem; box-shadow: var(--shadow);
+  }
+
+  /* Festival highlight card */
+  .festival-card {
+    background: linear-gradient(135deg, #1A1410 0%, #2d1f0e 100%);
+    border-radius: 16px; padding: 1.5rem;
+    margin-bottom: 1.25rem; position: relative; overflow: hidden;
+  }
+  .festival-card::before {
+    content: ''; position: absolute;
+    top: -30px; right: -30px; width: 160px; height: 160px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(196,137,42,0.3) 0%, transparent 70%);
+  }
+  .festival-card::after {
+    content: ''; position: absolute;
+    bottom: -20px; left: 20px; width: 100px; height: 100px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(184,76,42,0.2) 0%, transparent 70%);
+  }
+  .festival-card-inner { position: relative; z-index: 1; }
+  .festival-tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(196,137,42,0.2); color: #F5C842;
+    font-size: 10px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 4px 10px; border-radius: 20px; margin-bottom: 0.75rem;
+    border: 1px solid rgba(196,137,42,0.3);
+  }
+  .festival-title {
+    font-family: 'Lora', serif; font-size: 1.3rem; font-weight: 600;
+    color: var(--cream); margin-bottom: 0.4rem;
+  }
+  .festival-title em { font-style: italic; color: #F5C842; }
+  .festival-desc { font-size: 13px; color: rgba(245,240,232,0.6); line-height: 1.6; }
+
+  /* ── QUESTIONS ── */
+  .q-block { margin-bottom: 1.5rem; }
+  .q-block:last-child { margin-bottom: 0; }
+  .q-divider { height: 1px; background: var(--border); margin: 1.5rem 0; }
+  .q-label {
+    font-size: 14px; font-weight: 500; color: var(--ink);
+    margin-bottom: 0.5rem; line-height: 1.45;
+    display: flex; align-items: flex-start; gap: 4px;
+  }
+  .q-label .req { color: var(--rust); font-size: 13px; margin-top: 1px; }
+  .q-hint { font-size: 12px; color: var(--ink-light); margin-bottom: 0.5rem; line-height: 1.5; }
+
+  /* ── INPUTS ── */
+  input[type="text"], input[type="tel"], textarea {
+    width: 100%; background: var(--cream);
+    border: 1.5px solid var(--border-strong); border-radius: 10px;
+    padding: 10px 14px; font-family: 'DM Sans', sans-serif; font-size: 14px;
+    color: var(--ink); outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+    -webkit-appearance: none;
+  }
+  input[type="text"]:focus, input[type="tel"]:focus, textarea:focus {
+    border-color: var(--rust); background: white;
+    box-shadow: 0 0 0 3px rgba(184,76,42,0.1);
+  }
+  .form-panel.komunitas-panel input[type="text"]:focus,
+  .form-panel.komunitas-panel input[type="tel"]:focus,
+  .form-panel.komunitas-panel textarea:focus {
+    border-color: var(--teal);
+    box-shadow: 0 0 0 3px rgba(42,107,94,0.1);
+  }
+  input::placeholder, textarea::placeholder { color: var(--ink-faint); }
+  textarea { resize: vertical; min-height: 80px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 540px) { .grid-2 { grid-template-columns: 1fr; } }
+
+  /* ── CHOICE ITEMS ── */
+  .choice-group { display: flex; flex-direction: column; gap: 8px; }
+  .choice-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  @media (max-width: 480px) { .choice-grid { grid-template-columns: 1fr; } }
+
+  .choice-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 10px 12px; border-radius: 10px;
+    border: 1.5px solid var(--border); background: var(--cream);
+    cursor: pointer;
+    transition: border-color 0.18s, background 0.18s, box-shadow 0.18s;
+    user-select: none;
+  }
+  .choice-item:hover { border-color: var(--rust-light); background: white; box-shadow: 0 2px 8px rgba(184,76,42,0.08); }
+  .choice-item.selected { border-color: var(--rust); background: var(--rust-pale); box-shadow: 0 2px 8px rgba(184,76,42,0.12); }
+  .choice-item.selected .choice-indicator { background: var(--rust); border-color: var(--rust); }
+  .choice-item.selected .choice-indicator::after { opacity: 1; }
+
+  /* teal variant for komunitas form */
+  .teal-choices .choice-item:hover { border-color: var(--teal-light); box-shadow: 0 2px 8px rgba(42,107,94,0.08); }
+  .teal-choices .choice-item.selected { border-color: var(--teal); background: var(--teal-pale); box-shadow: 0 2px 8px rgba(42,107,94,0.12); }
+  .teal-choices .choice-item.selected .choice-indicator { background: var(--teal); border-color: var(--teal); }
+  .teal-choices .choice-item.selected .choice-indicator.square { background: var(--teal); border-color: var(--teal); }
+  .teal-choices .choice-item.selected .choice-indicator.square::after {
+    background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M2 5l2.5 2.5L8 3' stroke='%232A6B5E' stroke-width='1.8' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;
+  }
+
+  .choice-indicator {
+    width: 18px; height: 18px; border: 2px solid var(--ink-faint);
+    border-radius: 50%; flex-shrink: 0; margin-top: 1px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.18s; position: relative;
+  }
+  .choice-indicator.square { border-radius: 5px; }
+  .choice-indicator::after { content: ''; width: 8px; height: 8px; border-radius: 50%; background: white; opacity: 0; transition: opacity 0.18s; }
+  .choice-indicator.square::after {
+    width: 10px; height: 10px; border-radius: 2px;
+    background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M2 5l2.5 2.5L8 3' stroke='%23B84C2A' stroke-width='1.8' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;
+    opacity: 0;
+  }
+  .choice-item.selected .choice-indicator.square::after { opacity: 1; }
+
+  .choice-text { font-size: 13.5px; color: var(--ink-mid); line-height: 1.4; }
+  .choice-item.selected .choice-text { color: var(--ink); font-weight: 500; }
+
+  /* ── SUBMIT ── */
+  .submit-section { margin-top: 2.5rem; text-align: center; }
+  .btn-submit {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: var(--ink); color: var(--cream);
+    font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500;
+    padding: 14px 36px; border-radius: 50px; border: none; cursor: pointer;
+    transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+    letter-spacing: 0.02em;
+  }
+  .btn-submit.perpus-btn:hover { background: var(--rust); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(184,76,42,0.25); }
+  .btn-submit.komunitas-btn:hover { background: var(--teal); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(42,107,94,0.25); }
+  .btn-submit:active { transform: translateY(0); }
+  .btn-submit svg { width: 16px; height: 16px; }
+  .submit-note { font-size: 12px; color: var(--ink-faint); margin-top: 0.75rem; }
+
+  /* loading state */
+  .btn-submit.loading { opacity: 0.7; pointer-events: none; }
+
+  /* ── SUCCESS ── */
+  .success-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(26,20,16,0.6); z-index: 999;
+    align-items: center; justify-content: center; padding: 1.5rem;
+  }
+  .success-overlay.show { display: flex; }
+  .success-card {
+    background: white; border-radius: 20px; padding: 2.5rem;
+    max-width: 420px; width: 100%; text-align: center;
+    box-shadow: 0 20px 60px rgba(26,20,16,0.25);
+    animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  }
+  @keyframes popIn { from { opacity: 0; transform: scale(0.9) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+  .success-icon {
+    width: 64px; height: 64px; background: var(--teal-pale); border-radius: 50%;
+    margin: 0 auto 1.25rem; display: flex; align-items: center; justify-content: center;
+  }
+  .success-icon svg { width: 28px; height: 28px; color: var(--teal); }
+  .success-title { font-family: 'Lora', serif; font-size: 1.4rem; font-weight: 600; color: var(--ink); margin-bottom: 0.5rem; }
+  .success-body { font-size: 14px; color: var(--ink-light); line-height: 1.6; margin-bottom: 1.5rem; }
+  .btn-close-success {
+    background: var(--ink); color: var(--cream); border: none;
+    padding: 10px 28px; border-radius: 50px;
+    font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500;
+    cursor: pointer; transition: background 0.2s;
+  }
+  .btn-close-success:hover { background: var(--teal); }
+
+  /* ── FOOTER ── */
+  .site-footer {
+    background: var(--ink); color: rgba(245,240,232,0.45);
+    text-align: center; padding: 1.5rem; font-size: 12px;
+    position: relative; z-index: 1;
+  }
+  .site-footer strong { color: rgba(245,240,232,0.75); }
+
+  .required-note {
+    font-size: 12px; color: var(--ink-faint); margin-bottom: 2rem;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .required-note .dot-req { color: var(--rust); font-size: 14px; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="header-eyebrow">Asosiasi Perpustakaan Independen Bandung</div>
+    <h1 class="header-title">Sensus <em>Jejaring</em><br>Literasi Bandung</h1>
+    <div class="header-meta">
+      <div class="meta-item"><div class="meta-dot"></div> <strong>Perpustakaan &amp; Komunitas Literasi</strong></div>
+      <div class="meta-item"><div class="meta-dot"></div> Estimasi 10–15 menit</div>
+      <div class="meta-item"><div class="meta-dot"></div> Satu respons per institusi</div>
+    </div>
+  </div>
+</header>
+
+<div class="switcher-wrap">
+  <div class="switcher-inner">
+    <div class="switcher-label">Saya mengisi sebagai</div>
+    <div class="switcher-tabs">
+      <button class="tab-btn active" id="tab-perpus" onclick="switchTab('perpus')">
+        <div class="tab-icon">&#128218;</div>
+        <div>
+          Perpustakaan Independen
+          <span class="tab-sub">Anggota asosiasi</span>
+        </div>
+      </button>
+      <button class="tab-btn" id="tab-komunitas" onclick="switchTab('komunitas')">
+        <div class="tab-icon">&#128101;</div>
+        <div>
+          Komunitas Literasi
+          <span class="tab-sub">Mitra &amp; jejaring</span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="progress-bar-wrap">
+  <div class="progress-bar perpus" id="progressBar"></div>
+</div>
+
+<main class="main">
+
+  <!-- ══════════════════════════════════════════
+       FORM A — PERPUSTAKAAN
+  ══════════════════════════════════════════ -->
+  <div class="form-panel active" id="panel-perpus">
+    <form id="formPerpus" novalidate>
+      <p class="required-note"><span class="dot-req">*</span> Pertanyaan bertanda bintang wajib diisi</p>
+
+      <!-- A: IDENTITAS -->
+      <section class="form-section">
+        <div class="section-header">
+          <div class="section-badge">A</div>
+          <div class="section-titles">
+            <div class="section-title">Identitas Perpustakaan</div>
+            <div class="section-desc">Data dasar untuk keperluan administrasi asosiasi</div>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="q-block">
+            <label class="q-label" for="p_nama_perpus">Nama perpustakaan <span class="req">*</span></label>
+            <input type="text" id="p_nama_perpus" name="nama_perpus" placeholder="Contoh: Pojok Baca Cibeunying" required>
+          </div>
+          <div class="grid-2">
+            <div class="q-block">
+              <label class="q-label" for="p_nama_wakil">Nama perwakilan pengisi <span class="req">*</span></label>
+              <input type="text" id="p_nama_wakil" name="nama_wakil" placeholder="Nama lengkap" required>
+            </div>
+            <div class="q-block">
+              <label class="q-label" for="p_kontak_wa">Nomor kontak (WhatsApp) <span class="req">*</span></label>
+              <input type="tel" id="p_kontak_wa" name="kontak_wa" placeholder="08xxxxxxxxxx" required>
+            </div>
+          </div>
+          <div class="q-block">
+            <label class="q-label" for="p_alamat">Alamat / lokasi perpustakaan</label>
+            <input type="text" id="p_alamat" name="alamat" placeholder="Kelurahan, kecamatan, atau patokan lokasi">
+          </div>
+          <div class="q-block">
+            <label class="q-label">Sudah berapa lama perpustakaan ini aktif?</label>
+            <div class="choice-group" data-type="radio" data-name="usia_perpus">
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Kurang dari 1 tahun</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">1–3 tahun</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">3–5 tahun</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Lebih dari 5 tahun</span></label>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- B: EVENT -->
+      <section class="form-section">
+        <div class="section-header">
+          <div class="section-badge rust">B</div>
+          <div class="section-titles">
+            <div class="section-title">Kegiatan &amp; Event</div>
+            <div class="section-desc">Pendataan agenda tahunan dan potensi kolaborasi</div>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="q-block">
+            <label class="q-label" for="p_event_rutin">Event atau kegiatan rutin yang biasa diadakan setahun <span class="req">*</span></label>
+            <p class="q-hint">Contoh: bazar buku, diskusi bulanan, baca bareng, kelas literasi, dll.</p>
+            <textarea id="p_event_rutin" name="event_rutin" placeholder="Sebutkan satu per baris atau pisahkan dengan koma..." required></textarea>
+          </div>
+          <div class="q-block">
+            <label class="q-label">Apakah ada event yang berpotensi dikolaborasikan dengan anggota lain?</label>
+            <div class="choice-group" data-type="radio" data-name="potensi_kolaborasi">
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Ya, ada — akan saya sebutkan di bawah</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Belum ada rencana, tapi terbuka untuk kolaborasi</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Belum ada rencana saat ini</span></label>
+            </div>
+          </div>
+          <div class="q-block">
+            <label class="q-label" for="p_event_kolaborasi">Jika ada, sebutkan event yang bisa dikolaborasikan</label>
+            <textarea id="p_event_kolaborasi" name="event_kolaborasi" placeholder="Nama event, jadwal perkiraan, kebutuhan kolaborasi..."></textarea>
+          </div>
+        </div>
+      </section>
+
+      <!-- C: FESTIVAL LITERASI -->
+      <section class="form-section">
+        <div class="section-header">
+          <div class="section-badge gold">C</div>
+          <div class="section-titles">
+            <div class="section-title">Festival Literasi Bandung</div>
+            <div class="section-desc">Wacana penyelenggaraan festival skala kota, September–Oktober</div>
+          </div>
+        </div>
+
+        <div class="festival-card">
+          <div class="festival-card-inner">
+            <div class="festival-tag">&#10022; Wacana Baru</div>
+            <div class="festival-title"><em>Festival Literasi</em> Bandung</div>
+            <div class="festival-desc">Sedang digagas sebuah festival literasi skala kota yang melibatkan seluruh jejaring perpustakaan dan komunitas literasi Bandung, direncanakan sekitar September–Oktober. Kami ingin menghimpun pendapat dan kesediaan partisipasi dari setiap anggota.</div>
+          </div>
+        </div>
+
+        <div class="section-body">
+          <div class="q-block">
+            <label class="q-label">Bagaimana pendapat Anda tentang wacana Festival Literasi Bandung? <span class="req">*</span></label>
+            <div class="choice-group" data-type="radio" data-name="pendapat_festival">
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Sangat mendukung — ini sangat dibutuhkan</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Mendukung — tapi perlu perencanaan yang matang</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Netral — masih perlu diskusi lebih lanjut</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Kurang setuju — terlalu ambisius untuk sekarang</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Tidak setuju</span></label>
+            </div>
+          </div>
+          <div class="q-block">
+            <label class="q-label">Waktu penyelenggaraan yang paling ideal menurut Anda</label>
+            <div class="choice-group" data-type="radio" data-name="waktu_festival">
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">September (awal bulan)</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">September (akhir bulan)</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Oktober (awal bulan)</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Oktober (akhir bulan)</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Fleksibel / tidak ada preferensi</span></label>
+            </div>
+          </div>
+          <div class="q-block">
+            <label class="q-label">Bentuk partisipasi yang bisa diberikan perpustakaan Anda (pilih semua yang relevan)</label>
+            <div class="choice-grid" data-type="checkbox" data-name="partisipasi_festival">
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Stand / booth pameran buku</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Penyelenggaraan sesi diskusi</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Pertunjukan / penampilan seni</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Workshop / kelas literasi</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Penyediaan relawan panitia</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Promosi &amp; penyebaran informasi</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Dukungan logistik / tempat</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Penggalangan sponsor lokal</span></label>
+            </div>
+          </div>
+          <div class="q-block">
+            <label class="q-label">Tema atau segmen festival yang paling relevan menurut Anda (pilih semua yang sesuai)</label>
+            <div class="choice-grid" data-type="checkbox" data-name="tema_festival">
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Literasi anak &amp; remaja</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Penulis &amp; penerbit lokal</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Sastra &amp; puisi</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Komik &amp; zine</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Literasi digital &amp; media</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Buku &amp; budaya lokal Sunda</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Diskusi isu sosial &amp; kota</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Bazar &amp; pertukaran buku</span></label>
+            </div>
+          </div>
+          <div class="q-block">
+            <label class="q-label" for="p_catatan_festival">Catatan, saran, atau kekhawatiran terkait festival</label>
+            <textarea id="p_catatan_festival" name="catatan_festival" placeholder="Hal-hal yang perlu diperhatikan dalam perencanaan festival..."></textarea>
+          </div>
+        </div>
+      </section>
+
+      <!-- D: IURAN -->
+      <section class="form-section">
+        <div class="section-header">
+          <div class="section-badge">D</div>
+          <div class="section-titles">
+            <div class="section-title">Iuran Keanggotaan</div>
+            <div class="section-desc">Pendapat mengenai rencana pengadaan iuran asosiasi</div>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="q-block">
+            <label class="q-label">Bagaimana pendapat Anda tentang pengadaan iuran keanggotaan? <span class="req">*</span></label>
+            <div class="choice-group" data-type="radio" data-name="pendapat_iuran">
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Sangat setuju — iuran perlu segera ditetapkan</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Setuju — dengan syarat manfaat iuran jelas</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Netral — perlu diskusi lebih lanjut</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Kurang setuju saat ini</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Tidak setuju</span></label>
+            </div>
+          </div>
+          <div class="q-block">
+            <label class="q-label">Nominal yang dianggap wajar</label>
+            <div class="choice-group" data-type="radio" data-name="nominal_iuran">
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Rp 10.000–25.000 / bulan</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Rp 25.000–50.000 / bulan</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Rp 50.000–100.000 / bulan</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Iuran tahunan lebih fleksibel</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Disesuaikan kemampuan / sukarela</span></label>
+            </div>
+          </div>
+          <div class="q-block">
+            <label class="q-label">Sebaiknya iuran digunakan untuk (pilih semua yang relevan)</label>
+            <div class="choice-grid" data-type="checkbox" data-name="peruntukan_iuran">
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Dana operasional kegiatan bersama</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Subsidi workshop / pelatihan</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Dana darurat / bantuan anggota</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Pengembangan media asosiasi</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Dana Festival Literasi</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Pembelian koleksi bersama</span></label>
+            </div>
+          </div>
+          <div class="q-block">
+            <label class="q-label" for="p_catatan_iuran">Catatan atau saran terkait iuran</label>
+            <textarea id="p_catatan_iuran" name="catatan_iuran" placeholder="Pendapat atau usulan Anda..."></textarea>
+          </div>
+        </div>
+      </section>
+
+      <!-- E: DISKUSI & WORKSHOP -->
+      <section class="form-section">
+        <div class="section-header">
+          <div class="section-badge teal">E</div>
+          <div class="section-titles">
+            <div class="section-title">Topik Diskusi &amp; Pelatihan</div>
+            <div class="section-desc">Kebutuhan konten untuk forum dan workshop asosiasi</div>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="q-block">
+            <label class="q-label">Topik diskusi yang paling dibutuhkan <span class="req">*</span></label>
+            <p class="q-hint">Pilih semua yang relevan</p>
+            <div class="choice-grid" data-type="checkbox" data-name="topik_diskusi">
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Manajemen koleksi buku</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Pendanaan &amp; fundraising</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Promosi &amp; media sosial</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Manajemen komunitas &amp; relawan</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Literasi anak &amp; remaja</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Digitalisasi perpustakaan</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Keberlanjutan program</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Legalitas &amp; perizinan</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Kolaborasi sekolah / kampus</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Pengelolaan donasi buku</span></label>
+            </div>
+          </div>
+          <div class="q-block">
+            <label class="q-label" for="p_topik_lain">Usulan topik diskusi lain</label>
+            <input type="text" id="p_topik_lain" name="topik_lain" placeholder="Topik yang belum tercantum...">
+          </div>
+          <div class="q-divider"></div>
+          <div class="q-block">
+            <label class="q-label">Tema pelatihan / workshop yang paling dibutuhkan <span class="req">*</span></label>
+            <p class="q-hint">Pilih semua yang relevan</p>
+            <div class="choice-grid" data-type="checkbox" data-name="tema_workshop">
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Storytelling &amp; event literasi</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Desain konten visual</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Menulis proposal &amp; grant</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Sistem katalogisasi digital</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Manajemen keuangan sederhana</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Fasilitasi diskusi komunitas</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Bercerita untuk anak</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Pembuatan konten video / reels</span></label>
+            </div>
+          </div>
+          <div class="q-block">
+            <label class="q-label" for="p_workshop_lain">Usulan tema pelatihan lain</label>
+            <input type="text" id="p_workshop_lain" name="workshop_lain" placeholder="Tema yang belum tercantum...">
+          </div>
+          <div class="q-block">
+            <label class="q-label">Format pelatihan yang disukai</label>
+            <div class="choice-group" data-type="radio" data-name="format_pelatihan">
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Tatap muka (offline)</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Online (Zoom / Google Meet)</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Hybrid — bisa keduanya</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Tidak ada preferensi</span></label>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- F: KUMPUL RUTIN -->
+      <section class="form-section">
+        <div class="section-header">
+          <div class="section-badge rust">F</div>
+          <div class="section-titles">
+            <div class="section-title">Kumpul Rutin Bulanan</div>
+            <div class="section-desc">Kesediaan dan preferensi jadwal pertemuan rutin</div>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="q-block">
+            <label class="q-label">Kesediaan menjadi tuan rumah kumpul rutin? <span class="req">*</span></label>
+            <div class="choice-group" data-type="radio" data-name="kesediaan_tuan_rumah">
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Ya, bersedia</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Bersedia, dengan catatan tertentu</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Belum bisa saat ini</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Tidak bersedia</span></label>
+            </div>
+          </div>
+          <div class="q-block">
+            <label class="q-label" for="p_catatan_tuan_rumah">Catatan terkait kesediaan menjadi tuan rumah</label>
+            <input type="text" id="p_catatan_tuan_rumah" name="catatan_tuan_rumah" placeholder="Kapasitas ruang, waktu yang bisa, atau syarat lainnya...">
+          </div>
+          <div class="q-block">
+            <label class="q-label">Hari yang paling memungkinkan (pilih semua yang relevan)</label>
+            <div class="choice-grid" data-type="checkbox" data-name="hari_kumpul">
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Senin</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Selasa</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Rabu</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Kamis</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Jumat</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Sabtu</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Minggu</span></label>
+            </div>
+          </div>
+          <div class="q-block">
+            <label class="q-label">Sesi waktu yang disukai</label>
+            <div class="choice-group" data-type="radio" data-name="waktu_kumpul">
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Pagi — 08.00–11.00</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Siang — 12.00–15.00</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Sore — 15.00–18.00</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Malam — 19.00–21.00</span></label>
+            </div>
+          </div>
+          <div class="q-block">
+            <label class="q-label">Minggu keberapa yang disukai?</label>
+            <div class="choice-group" data-type="radio" data-name="minggu_kumpul">
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Minggu pertama</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Minggu kedua</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Minggu ketiga</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Minggu keempat</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Fleksibel</span></label>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- G: KONDISI -->
+      <section class="form-section">
+        <div class="section-header">
+          <div class="section-badge">G</div>
+          <div class="section-titles">
+            <div class="section-title">Kondisi &amp; Kebutuhan Perpustakaan</div>
+            <div class="section-desc">Tantangan nyata yang bisa disinergikan bersama</div>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="q-block">
+            <label class="q-label">Tantangan terbesar saat ini (pilih hingga 3)</label>
+            <div class="choice-grid" data-type="checkbox" data-name="tantangan" data-max="3">
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Keterbatasan ruang / tempat</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Koleksi buku kurang beragam</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Minimnya pengunjung / pembaca</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Kekurangan SDM / relawan</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Minimnya dana operasional</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Kurang eksposur di medsos</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Belum punya sistem pengelolaan</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Lainnya</span></label>
+            </div>
+          </div>
+          <div class="q-block">
+            <label class="q-label">Kesediaan berbagi sumber daya dengan anggota lain</label>
+            <div class="choice-group" data-type="radio" data-name="berbagi_sda">
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Ya, sangat terbuka</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Tergantung jenis sumber dayanya</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Perlu diskusi lebih lanjut</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Belum memungkinkan saat ini</span></label>
+            </div>
+          </div>
+          <div class="q-block">
+            <label class="q-label" for="p_kebutuhan_spesifik">Kebutuhan spesifik yang ingin diatasi bersama asosiasi</label>
+            <textarea id="p_kebutuhan_spesifik" name="kebutuhan_spesifik" placeholder="Contoh: butuh relawan untuk program anak, perlu koneksi ke penerbit..."></textarea>
+          </div>
+        </div>
+      </section>
+
+      <!-- H: USULAN UMUM -->
+      <section class="form-section">
+        <div class="section-header">
+          <div class="section-badge teal">H</div>
+          <div class="section-titles">
+            <div class="section-title">Usulan &amp; Pesan Umum</div>
+            <div class="section-desc">Ruang bebas untuk harapan, ide, dan masukan</div>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="q-block">
+            <label class="q-label" for="p_harapan">Apa yang paling diharapkan dari asosiasi ke depan?</label>
+            <textarea id="p_harapan" name="harapan" placeholder="Harapan, visi, atau tujuan yang ingin dicapai bersama..."></textarea>
+          </div>
+          <div class="q-block">
+            <label class="q-label" for="p_ide_program">Usulan program atau inisiatif yang ingin ditawarkan</label>
+            <textarea id="p_ide_program" name="ide_program" placeholder="Ide program baru, format kegiatan, atau inisiatif yang belum pernah dicoba..."></textarea>
+          </div>
+          <div class="q-block">
+            <label class="q-label" for="p_pesan_lain">Ada hal lain yang ingin disampaikan?</label>
+            <textarea id="p_pesan_lain" name="pesan_lain" placeholder="Saran, apresiasi, atau catatan bebas..."></textarea>
+          </div>
+        </div>
+      </section>
+
+      <div class="submit-section">
+        <button type="submit" class="btn-submit perpus-btn">
+          Kirim Respons
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+          </svg>
+        </button>
+        <p class="submit-note">Data Anda akan digunakan untuk sinergi program asosiasi</p>
+      </div>
+    </form>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════
+       FORM B — KOMUNITAS LITERASI
+  ══════════════════════════════════════════ -->
+  <div class="form-panel komunitas-panel" id="panel-komunitas">
+    <form id="formKomunitas" novalidate>
+      <p class="required-note"><span class="dot-req">*</span> Pertanyaan bertanda bintang wajib diisi</p>
+
+      <!-- A: IDENTITAS KOMUNITAS -->
+      <section class="form-section">
+        <div class="section-header">
+          <div class="section-badge teal">A</div>
+          <div class="section-titles">
+            <div class="section-title">Identitas Komunitas</div>
+            <div class="section-desc">Data dasar komunitas literasi Anda</div>
+          </div>
+        </div>
+        <div class="section-body teal-choices">
+          <div class="q-block">
+            <label class="q-label" for="k_nama">Nama komunitas <span class="req">*</span></label>
+            <input type="text" id="k_nama" name="nama_komunitas" placeholder="Contoh: Komunitas Buku Bandung Selatan" required>
+          </div>
+          <div class="grid-2">
+            <div class="q-block">
+              <label class="q-label" for="k_wakil">Nama perwakilan pengisi <span class="req">*</span></label>
+              <input type="text" id="k_wakil" name="nama_wakil" placeholder="Nama lengkap" required>
+            </div>
+            <div class="q-block">
+              <label class="q-label" for="k_kontak">Nomor kontak (WhatsApp) <span class="req">*</span></label>
+              <input type="tel" id="k_kontak" name="kontak_wa" placeholder="08xxxxxxxxxx" required>
+            </div>
+          </div>
+          <div class="q-block">
+            <label class="q-label" for="k_domisili">Domisili / area kegiatan komunitas</label>
+            <input type="text" id="k_domisili" name="domisili" placeholder="Kelurahan, kecamatan, atau kota">
+          </div>
+          <div class="q-block">
+            <label class="q-label">Fokus utama komunitas Anda</label>
+            <div class="choice-grid teal-choices" data-type="checkbox" data-name="fokus_komunitas">
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Klub baca / diskusi buku</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Menulis kreatif / sastra</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Literasi anak &amp; remaja</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Puisi &amp; pertunjukan kata</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Komik, zine &amp; desain</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Literasi digital &amp; media</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Riset &amp; kajian budaya</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Lainnya</span></label>
+            </div>
+          </div>
+          <div class="q-block">
+            <label class="q-label">Sudah berapa lama komunitas ini aktif?</label>
+            <div class="choice-group teal-choices" data-type="radio" data-name="usia_komunitas">
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Kurang dari 1 tahun</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">1–3 tahun</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">3–5 tahun</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Lebih dari 5 tahun</span></label>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- B: KEGIATAN -->
+      <section class="form-section">
+        <div class="section-header">
+          <div class="section-badge rust">B</div>
+          <div class="section-titles">
+            <div class="section-title">Kegiatan &amp; Event Komunitas</div>
+            <div class="section-desc">Agenda rutin dan potensi kolaborasi</div>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="q-block">
+            <label class="q-label" for="k_kegiatan_rutin">Kegiatan rutin yang biasa diadakan setahun <span class="req">*</span></label>
+            <p class="q-hint">Contoh: diskusi mingguan, peluncuran zine, open mic, bedah buku, dll.</p>
+            <textarea id="k_kegiatan_rutin" name="kegiatan_rutin" placeholder="Sebutkan satu per baris atau pisahkan dengan koma..." required></textarea>
+          </div>
+          <div class="q-block">
+            <label class="q-label">Apakah komunitas Anda terbuka untuk berkolaborasi dengan perpustakaan independen?</label>
+            <div class="choice-group teal-choices" data-type="radio" data-name="terbuka_kolaborasi">
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Sangat terbuka — kami aktif mencari kolaborasi</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Terbuka — tergantung jenis kegiatannya</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Masih perlu dibicarakan internal</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Belum memungkinkan saat ini</span></label>
+            </div>
+          </div>
+          <div class="q-block">
+            <label class="q-label" for="k_bentuk_kolaborasi">Bentuk kolaborasi yang paling ideal menurut Anda</label>
+            <textarea id="k_bentuk_kolaborasi" name="bentuk_kolaborasi" placeholder="Contoh: penyelenggaraan acara bersama, berbagi mailing list, ko-kurasi program..."></textarea>
+          </div>
+        </div>
+      </section>
+
+      <!-- C: FESTIVAL LITERASI -->
+      <section class="form-section">
+        <div class="section-header">
+          <div class="section-badge gold">C</div>
+          <div class="section-titles">
+            <div class="section-title">Festival Literasi Bandung</div>
+            <div class="section-desc">Wacana penyelenggaraan festival skala kota, September–Oktober</div>
+          </div>
+        </div>
+
+        <div class="festival-card">
+          <div class="festival-card-inner">
+            <div class="festival-tag">&#10022; Wacana Baru</div>
+            <div class="festival-title"><em>Festival Literasi</em> Bandung</div>
+            <div class="festival-desc">Sedang digagas sebuah festival literasi skala kota yang melibatkan seluruh jejaring perpustakaan dan komunitas literasi Bandung, direncanakan sekitar September–Oktober. Kami ingin menghimpun pendapat dan kesediaan partisipasi komunitas.</div>
+          </div>
+        </div>
+
+        <div class="section-body">
+          <div class="q-block">
+            <label class="q-label">Bagaimana pendapat komunitas Anda tentang wacana Festival Literasi Bandung? <span class="req">*</span></label>
+            <div class="choice-group teal-choices" data-type="radio" data-name="pendapat_festival">
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Sangat mendukung — ini sangat dibutuhkan</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Mendukung — tapi perlu perencanaan yang matang</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Netral — masih perlu diskusi lebih lanjut</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Kurang setuju — terlalu ambisius untuk sekarang</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Tidak setuju</span></label>
+            </div>
+          </div>
+          <div class="q-block">
+            <label class="q-label">Waktu penyelenggaraan yang paling ideal</label>
+            <div class="choice-group teal-choices" data-type="radio" data-name="waktu_festival">
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">September (awal bulan)</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">September (akhir bulan)</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Oktober (awal bulan)</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Oktober (akhir bulan)</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Fleksibel / tidak ada preferensi</span></label>
+            </div>
+          </div>
+          <div class="q-block">
+            <label class="q-label">Bentuk partisipasi yang bisa diberikan komunitas Anda (pilih semua yang relevan)</label>
+            <div class="choice-grid teal-choices" data-type="checkbox" data-name="partisipasi_festival">
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Penyelenggaraan sesi diskusi / talk</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Penampilan / pertunjukan kata</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Workshop / kelas tematik</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Booth pameran / publikasi</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Penyediaan relawan panitia</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Promosi lewat jaringan komunitas</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Kurasi konten / program</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Penggalangan sponsor / mitra</span></label>
+            </div>
+          </div>
+          <div class="q-block">
+            <label class="q-label">Tema atau segmen festival yang paling relevan bagi komunitas Anda</label>
+            <div class="choice-grid teal-choices" data-type="checkbox" data-name="tema_festival">
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Literasi anak &amp; remaja</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Penulis &amp; penerbit lokal</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Sastra &amp; puisi</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Komik &amp; zine</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Literasi digital &amp; media</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Buku &amp; budaya lokal Sunda</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Diskusi isu sosial &amp; kota</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Bazar &amp; pertukaran buku</span></label>
+            </div>
+          </div>
+          <div class="q-block">
+            <label class="q-label" for="k_catatan_festival">Catatan, saran, atau kekhawatiran terkait festival</label>
+            <textarea id="k_catatan_festival" name="catatan_festival" placeholder="Hal-hal yang perlu diperhatikan dalam perencanaan festival..."></textarea>
+          </div>
+        </div>
+      </section>
+
+      <!-- D: TOPIK & WORKSHOP -->
+      <section class="form-section">
+        <div class="section-header">
+          <div class="section-badge teal">D</div>
+          <div class="section-titles">
+            <div class="section-title">Topik Diskusi &amp; Pelatihan</div>
+            <div class="section-desc">Kebutuhan konten untuk forum dan workshop bersama</div>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="q-block">
+            <label class="q-label">Topik diskusi yang paling dibutuhkan komunitas Anda <span class="req">*</span></label>
+            <p class="q-hint">Pilih semua yang relevan</p>
+            <div class="choice-grid teal-choices" data-type="checkbox" data-name="topik_diskusi">
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Pengembangan program literasi</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Pendanaan &amp; fundraising komunitas</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Promosi &amp; media sosial</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Manajemen relawan</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Kolaborasi lintas komunitas</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Penerbitan independen / self-pub</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Keberlanjutan komunitas</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Isu literasi &amp; kebijakan kota</span></label>
+            </div>
+          </div>
+          <div class="q-block">
+            <label class="q-label" for="k_topik_lain">Usulan topik diskusi lain</label>
+            <input type="text" id="k_topik_lain" name="topik_lain" placeholder="Topik yang belum tercantum...">
+          </div>
+          <div class="q-divider"></div>
+          <div class="q-block">
+            <label class="q-label">Tema pelatihan / workshop yang paling dibutuhkan <span class="req">*</span></label>
+            <p class="q-hint">Pilih semua yang relevan</p>
+            <div class="choice-grid teal-choices" data-type="checkbox" data-name="tema_workshop">
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Fasilitasi diskusi buku</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Desain konten visual</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Menulis proposal &amp; grant</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Penulisan kreatif / workshop menulis</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Produksi zine / publikasi indie</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Manajemen event komunitas</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Pembuatan konten video / podcast</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Bercerita untuk anak</span></label>
+            </div>
+          </div>
+          <div class="q-block">
+            <label class="q-label" for="k_workshop_lain">Usulan tema pelatihan lain</label>
+            <input type="text" id="k_workshop_lain" name="workshop_lain" placeholder="Tema yang belum tercantum...">
+          </div>
+          <div class="q-block">
+            <label class="q-label">Format pelatihan yang disukai</label>
+            <div class="choice-group teal-choices" data-type="radio" data-name="format_pelatihan">
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Tatap muka (offline)</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Online (Zoom / Google Meet)</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Hybrid — bisa keduanya</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Tidak ada preferensi</span></label>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- E: KUMPUL RUTIN -->
+      <section class="form-section">
+        <div class="section-header">
+          <div class="section-badge rust">E</div>
+          <div class="section-titles">
+            <div class="section-title">Kumpul Rutin Bersama</div>
+            <div class="section-desc">Kesediaan dan preferensi jadwal pertemuan jejaring</div>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="q-block">
+            <label class="q-label">Apakah komunitas Anda bersedia mengikuti kumpul rutin bulanan jejaring literasi?</label>
+            <div class="choice-group teal-choices" data-type="radio" data-name="kesediaan_kumpul">
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Ya, sangat bersedia</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Bersedia, tergantung jadwal</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Mungkin, perlu dibicarakan dulu</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Belum bisa berkomitmen</span></label>
+            </div>
+          </div>
+          <div class="q-block">
+            <label class="q-label">Kesediaan menjadi tuan rumah kumpul</label>
+            <div class="choice-group teal-choices" data-type="radio" data-name="kesediaan_tuan_rumah">
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Ya, bersedia</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Bersedia, dengan catatan tertentu</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Belum bisa saat ini</span></label>
+            </div>
+          </div>
+          <div class="q-block">
+            <label class="q-label">Hari yang paling memungkinkan (pilih semua yang relevan)</label>
+            <div class="choice-grid teal-choices" data-type="checkbox" data-name="hari_kumpul">
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Senin</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Selasa</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Rabu</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Kamis</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Jumat</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Sabtu</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Minggu</span></label>
+            </div>
+          </div>
+          <div class="q-block">
+            <label class="q-label">Sesi waktu yang disukai</label>
+            <div class="choice-group teal-choices" data-type="radio" data-name="waktu_kumpul">
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Pagi — 08.00–11.00</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Siang — 12.00–15.00</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Sore — 15.00–18.00</span></label>
+              <label class="choice-item"><div class="choice-indicator"></div><span class="choice-text">Malam — 19.00–21.00</span></label>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- F: KONDISI KOMUNITAS -->
+      <section class="form-section">
+        <div class="section-header">
+          <div class="section-badge">F</div>
+          <div class="section-titles">
+            <div class="section-title">Kondisi &amp; Kebutuhan Komunitas</div>
+            <div class="section-desc">Tantangan yang bisa disinergikan dalam jejaring</div>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="q-block">
+            <label class="q-label">Tantangan terbesar komunitas saat ini (pilih hingga 3)</label>
+            <div class="choice-grid teal-choices" data-type="checkbox" data-name="tantangan" data-max="3">
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Minimnya anggota / partisipan aktif</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Keterbatasan dana kegiatan</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Kurang tempat untuk berkumpul</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Minim eksposur &amp; audiens baru</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Sulitnya mempertahankan konsistensi</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Kurang jaringan dengan komunitas lain</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Sumber daya konten / materi terbatas</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Lainnya</span></label>
+            </div>
+          </div>
+          <div class="q-block">
+            <label class="q-label">Apa yang paling bisa diberikan komunitas Anda ke dalam jejaring literasi?</label>
+            <div class="choice-grid teal-choices" data-type="checkbox" data-name="kontribusi_jejaring">
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Jaringan / komunitas pembaca</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Konten &amp; kurasi bacaan</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Keahlian fasilitasi diskusi</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Keahlian seni / pertunjukan</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Jaringan sponsor / mitra</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Kemampuan desain / visual</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Keahlian digital / media</span></label>
+              <label class="choice-item"><div class="choice-indicator square"></div><span class="choice-text">Semangat &amp; energi sukarelawan</span></label>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- G: USULAN UMUM -->
+      <section class="form-section">
+        <div class="section-header">
+          <div class="section-badge teal">G</div>
+          <div class="section-titles">
+            <div class="section-title">Usulan &amp; Pesan Umum</div>
+            <div class="section-desc">Ruang bebas untuk harapan, ide, dan masukan</div>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="q-block">
+            <label class="q-label" for="k_harapan">Apa harapan komunitas Anda dari jejaring literasi Bandung ini?</label>
+            <textarea id="k_harapan" name="harapan" placeholder="Harapan, visi, atau tujuan yang ingin dicapai bersama..."></textarea>
+          </div>
+          <div class="q-block">
+            <label class="q-label" for="k_ide_program">Usulan program atau inisiatif bersama yang ingin ditawarkan</label>
+            <textarea id="k_ide_program" name="ide_program" placeholder="Ide kolaborasi, format acara, atau program lintas komunitas..."></textarea>
+          </div>
+          <div class="q-block">
+            <label class="q-label" for="k_pesan_lain">Ada hal lain yang ingin disampaikan?</label>
+            <textarea id="k_pesan_lain" name="pesan_lain" placeholder="Saran, pertanyaan, atau catatan bebas..."></textarea>
+          </div>
+        </div>
+      </section>
+
+      <div class="submit-section">
+        <button type="submit" class="btn-submit komunitas-btn">
+          Kirim Respons
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+          </svg>
+        </button>
+        <p class="submit-note">Data Anda akan digunakan untuk sinergi program jejaring literasi</p>
+      </div>
+    </form>
+  </div>
+
+</main>
+
+<!-- SUCCESS MODAL -->
+<div class="success-overlay" id="successOverlay">
+  <div class="success-card">
+    <div class="success-icon">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+      </svg>
+    </div>
+    <div class="success-title">Terima kasih!</div>
+    <p class="success-body" id="successBody">Respons Anda telah berhasil dicatat. Hasil kompilasi akan dibagikan kepada seluruh jejaring setelah periode pengisian ditutup.</p>
+    <button class="btn-close-success" onclick="closeSuccess()">Tutup</button>
+  </div>
+</div>
+
+<footer class="site-footer">
+  <strong>Asosiasi Perpustakaan Independen Bandung</strong> · Sensus Jejaring Literasi
+</footer>
+
+<script>
+  // ── CONFIG: Ganti URL ini setelah deploy Apps Script ──
+  const SHEET_URL_PERPUS    = 'GANTI_DENGAN_URL_APPS_SCRIPT_PERPUSTAKAAN';
+  const SHEET_URL_KOMUNITAS = 'GANTI_DENGAN_URL_APPS_SCRIPT_KOMUNITAS';
+
+  // ── TAB SWITCHER ──
+  function switchTab(tab) {
+    document.getElementById('tab-perpus').classList.toggle('active', tab === 'perpus');
+    document.getElementById('tab-komunitas').classList.toggle('active', tab === 'komunitas');
+    document.getElementById('panel-perpus').classList.toggle('active', tab === 'perpus');
+    document.getElementById('panel-komunitas').classList.toggle('active', tab === 'komunitas');
+    const bar = document.getElementById('progressBar');
+    bar.className = 'progress-bar ' + (tab === 'perpus' ? 'perpus' : 'komunitas');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // ── CHOICE ITEMS ──
+  document.querySelectorAll('.choice-group, .choice-grid').forEach(group => {
+    const type = group.dataset.type;
+    const maxSel = group.dataset.max ? parseInt(group.dataset.max) : Infinity;
+    group.querySelectorAll('.choice-item').forEach(item => {
+      item.addEventListener('click', () => {
+        if (type === 'radio') {
+          group.querySelectorAll('.choice-item').forEach(i => i.classList.remove('selected'));
+          item.classList.add('selected');
+        } else {
+          if (item.classList.contains('selected')) {
+            item.classList.remove('selected');
+          } else if (group.querySelectorAll('.selected').length < maxSel) {
+            item.classList.add('selected');
+          }
+        }
+      });
+    });
+  });
+
+  // ── PROGRESS BAR ──
+  window.addEventListener('scroll', () => {
+    const pct = document.body.scrollHeight - window.innerHeight;
+    document.getElementById('progressBar').style.width = (pct > 0 ? (window.scrollY / pct) * 100 : 0) + '%';
+  }, { passive: true });
+
+  // ── COLLECT FORM DATA ──
+  function collectData(formEl) {
+    const data = {};
+    formEl.querySelectorAll('input[type=text], input[type=tel], textarea').forEach(el => {
+      if (el.name) data[el.name] = el.value;
+    });
+    formEl.querySelectorAll('[data-name]').forEach(group => {
+      const name = group.dataset.name;
+      if (group.dataset.type === 'radio') {
+        const sel = group.querySelector('.selected .choice-text');
+        data[name] = sel ? sel.textContent.trim() : '';
+      } else {
+        data[name] = Array.from(group.querySelectorAll('.selected .choice-text')).map(s => s.textContent.trim());
+      }
+    });
+    return data;
+  }
+
+  // ── VALIDATE ──
+  function validate(formEl, requiredIds) {
+    let ok = true;
+    requiredIds.forEach(id => {
+      const el = document.getElementById(id);
+      if (el && !el.value.trim()) {
+        el.style.borderColor = 'var(--rust)';
+        if (ok) el.focus();
+        ok = false;
+      } else if (el) { el.style.borderColor = ''; }
+    });
+    return ok;
+  }
+
+  // ── SUBMIT ──
+  function submitForm(formEl, sheetUrl, requiredIds, successMsg) {
+    if (!validate(formEl, requiredIds)) return;
+    const btn = formEl.querySelector('.btn-submit');
+    btn.classList.add('loading');
+    btn.textContent = 'Mengirim...';
+    const data = collectData(formEl);
+
+    if (sheetUrl.startsWith('GANTI')) {
+      // Demo mode — no real sheet connected yet
+      setTimeout(() => {
+        btn.classList.remove('loading');
+        btn.innerHTML = 'Kirim Respons <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>';
+        document.getElementById('successBody').textContent = successMsg;
+        document.getElementById('successOverlay').classList.add('show');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }, 800);
+      return;
+    }
+
+    fetch(sheetUrl, { method: 'POST', body: JSON.stringify(data) })
+      .then(() => {
+        document.getElementById('successBody').textContent = successMsg;
+        document.getElementById('successOverlay').classList.add('show');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      })
+      .catch(() => {
+        alert('Gagal mengirim data. Periksa koneksi internet dan coba lagi.');
+      })
+      .finally(() => {
+        btn.classList.remove('loading');
+        btn.innerHTML = 'Kirim Respons <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>';
+      });
+  }
+
+  document.getElementById('formPerpus').addEventListener('submit', function(e) {
+    e.preventDefault();
+    submitForm(this, SHEET_URL_PERPUS,
+      ['p_nama_perpus','p_nama_wakil','p_kontak_wa'],
+      'Respons dari perpustakaan Anda telah berhasil dicatat. Hasil kompilasi akan dibagikan kepada seluruh anggota setelah periode pengisian ditutup.'
+    );
+  });
+
+  document.getElementById('formKomunitas').addEventListener('submit', function(e) {
+    e.preventDefault();
+    submitForm(this, SHEET_URL_KOMUNITAS,
+      ['k_nama','k_wakil','k_kontak'],
+      'Respons dari komunitas Anda telah berhasil dicatat. Terima kasih sudah menjadi bagian dari jejaring literasi Bandung!'
+    );
+  });
+
+  // Remove error style on input
+  document.querySelectorAll('input, textarea').forEach(el => {
+    el.addEventListener('input', () => { el.style.borderColor = ''; });
+  });
+
+  function closeSuccess() {
+    document.getElementById('successOverlay').classList.remove('show');
+  }
+</script>
+</body>
+</html>
