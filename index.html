@@ -841,7 +841,18 @@ function renderAdmin(){
     <button class="secondary-btn" onclick="openAddPeriod()" style="margin-top:4px;">＋ Tambah Periode Baru</button>
     <button class="save-btn" onclick="saveAdmin()">💾 Simpan Semua Perubahan</button>
     <button class="danger-btn" onclick="resetToday()">🔄 Reset Checklist Hari Ini</button>
-    <button class="danger-btn" style="margin-top:8px;background:var(--c1l);color:var(--c1);border-color:var(--c1);" onclick="doSignOut()">🚪 Keluar Akun</button>
+    <div class="admin-section" style="margin-top:12px;">
+      <div class="admin-section-header">Backup & Restore Config</div>
+      <div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px;">
+        <button class="secondary-btn" style="margin:0;" onclick="exportConfig()">📤 Export Config (JSON)</button>
+        <label style="width:100%;padding:12px;background:var(--bg);color:var(--text);border:1px solid var(--border2);border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;text-align:center;display:block;">
+          📥 Import Config (JSON)
+          <input type="file" accept=".json" onchange="importConfig(event)" style="display:none;">
+        </label>
+        <p style="font-size:12px;color:var(--text3);text-align:center;">Import akan mengganti semua pengaturan saat ini</p>
+      </div>
+    </div>
+    <button class="danger-btn" style="margin-top:12px;background:var(--c1l);color:var(--c1);border-color:var(--c1);" onclick="doSignOut()">🚪 Keluar Akun</button>
     <div style="height:20px;"></div>`;
   cont.innerHTML=html;
 }
@@ -945,6 +956,38 @@ window.resetToday=async function(){
   const idx=historyCache.findIndex(h=>h.date===todayKey());
   if(idx>=0)historyCache.splice(idx,1);
   showToast('Checklist direset');renderHome();
+};
+window.exportConfig=function(){
+  const json=JSON.stringify(config,null,2);
+  const blob=new Blob([json],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='kiddo-config-'+todayKey()+'.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Config berhasil diexport!');
+};
+window.importConfig=async function(event){
+  const file=event.target.files[0];
+  if(!file)return;
+  try{
+    const text=await file.text();
+    const imported=JSON.parse(text);
+    if(!imported.periods||!Array.isArray(imported.periods)){
+      alert('File tidak valid — bukan config yang benar.');
+      return;
+    }
+    if(!confirm('Import config ini? Semua pengaturan saat ini akan diganti.'))return;
+    config=imported;
+    await saveConfigFS();
+    showToast('✓ Config berhasil diimport!');
+    renderAdmin();
+    renderHome();
+  }catch(e){
+    alert('Gagal membaca file: '+e.message);
+  }
+  event.target.value='';
 };
 window.doSignOut=async function(){
   if(!confirm('Keluar dari akun?'))return;
