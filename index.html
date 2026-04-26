@@ -421,29 +421,31 @@ function allTasksForDay(d) { return periodsForDay(d).flatMap(p=>p.tasks); }
 function todayTasks() { return allTasksForDay(new Date()); }
 function todayStars() { return Object.values(todayData).reduce((a,v)=>a+(typeof v==='number'?v:0),0); }
 function starsOfType(data, tasks, required) {
-  return tasks.filter(t=>t.required===required&&data[String(t.id)]).reduce((a,t)=>a+t.pts,0);
+  return tasks.filter(t=>t.required!==false===required&&data[String(t.id)]).reduce((a,t)=>a+t.pts,0);
 }
 function todayGoldStars() {
-  const tasks=todayTasks();
-  return starsOfType(todayData,tasks,true);
+  return todayTasks().filter(t=>t.required!==false&&todayData[String(t.id)]).reduce((a,t)=>a+t.pts,0);
 }
 function todaySilverStars() {
-  const tasks=todayTasks();
-  return starsOfType(todayData,tasks,false);
+  return todayTasks().filter(t=>t.required===false&&todayData[String(t.id)]).reduce((a,t)=>a+t.pts,0);
+}
+function histGoldStars(data, date) {
+  return allTasksForDay(date).filter(t=>t.required!==false&&data[String(t.id)]).reduce((a,t)=>a+t.pts,0);
+}
+function histSilverStars(data, date) {
+  return allTasksForDay(date).filter(t=>t.required===false&&data[String(t.id)]).reduce((a,t)=>a+t.pts,0);
 }
 function totalGoldAll() {
-  return historyCache.filter(h=>h.date!==todayKey()).reduce((sum,h)=>{
-    const date=new Date(h.date+'T00:00:00');
-    const tasks=allTasksForDay(date);
-    return sum+starsOfType(h.data,tasks,true);
-  },0)+todayGoldStars();
+  const fromHist=historyCache.filter(h=>h.date!==todayKey()).reduce((sum,h)=>{
+    return sum+histGoldStars(h.data,new Date(h.date+'T00:00:00'));
+  },0);
+  return fromHist+todayGoldStars();
 }
 function totalSilverAll() {
-  return historyCache.filter(h=>h.date!==todayKey()).reduce((sum,h)=>{
-    const date=new Date(h.date+'T00:00:00');
-    const tasks=allTasksForDay(date);
-    return sum+starsOfType(h.data,tasks,false);
-  },0)+todaySilverStars();
+  const fromHist=historyCache.filter(h=>h.date!==todayKey()).reduce((sum,h)=>{
+    return sum+histSilverStars(h.data,new Date(h.date+'T00:00:00'));
+  },0);
+  return fromHist+todaySilverStars();
 }
 function totalStarsAll() { return totalGoldAll()+totalSilverAll(); }
 function weekStars(weekStartKey, reqOnly=false) {
