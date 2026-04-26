@@ -919,7 +919,19 @@ window.addAchievement=function(){
 };
 window.saveAdmin=async function(){
   config.childName=document.getElementById('childNameInput').value.trim()||'Adik';
-  config.periods.forEach((p,pi)=>{const el=document.getElementById('alarm-'+pi);if(el)p.alarm=el.value;});
+  config.periods.forEach((p,pi)=>{
+    const el=document.getElementById('alarm-'+pi);
+    if(el) p.alarm=el.value;
+    // Read task labels and pts directly from DOM
+    const taskRows=document.querySelectorAll(`#atasks-${pi} .admin-task-row`);
+    taskRows.forEach((row,ti)=>{
+      if(!p.tasks[ti]) return;
+      const textEl=row.querySelector('input[type=text]');
+      const numEl=row.querySelector('input[type=number]');
+      if(textEl) p.tasks[ti].label=textEl.value;
+      if(numEl) p.tasks[ti].pts=parseInt(numEl.value)||1;
+    });
+  });
   const np=document.getElementById('newPinInput').value.trim();
   if(np&&/^\d{4}$/.test(np))config.pin=np;
   await saveConfigFS();
