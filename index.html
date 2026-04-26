@@ -389,6 +389,7 @@ const DEFAULT_CONFIG = {
 };
 
 let config = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+window.config = config;
 let todayData = {};
 let historyCache = [];
 let histFilter = 7;
@@ -484,7 +485,7 @@ function formatDateShort(d){
 // ---- FIRESTORE ----
 async function loadFromFirestore(){
   const cfgDoc=await getDoc(doc(db,'users',userId,'data','config'));
-  if(cfgDoc.exists()) config=cfgDoc.data();
+  if(cfgDoc.exists()){ config=cfgDoc.data(); window.config=config; }
   const todayDoc=await getDoc(doc(db,'users',userId,'days',todayKey()));
   if(todayDoc.exists()) todayData=todayDoc.data();
   await loadHistory(0);
@@ -979,7 +980,7 @@ window.importConfig=async function(event){
       return;
     }
     if(!confirm('Import config ini? Semua pengaturan saat ini akan diganti.'))return;
-    config=imported;
+    config=imported; window.config=config;
     await saveConfigFS();
     showToast('✓ Config berhasil diimport!');
     renderAdmin();
