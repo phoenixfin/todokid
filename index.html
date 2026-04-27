@@ -151,6 +151,47 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .ach-admin-item input[type=text]{flex:1;font-size:13px;border:none;outline:none;background:transparent;color:var(--text);font-family:inherit;}
 .ach-pts-input{width:60px;font-size:14px;text-align:center;border:1px solid var(--border2);border-radius:8px;padding:4px;background:var(--bg);color:var(--text);font-family:inherit;}
 
+/* CONGRATS OVERLAY */
+.congrats-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:600;display:none;align-items:center;justify-content:center;}
+.congrats-overlay.show{display:flex;}
+.congrats-box{background:var(--card);border-radius:24px;padding:36px 28px;text-align:center;max-width:320px;width:calc(100%-48px);box-shadow:0 8px 32px rgba(0,0,0,.2);animation:popIn .35s ease;}
+.congrats-emoji{font-size:72px;margin-bottom:8px;display:block;}
+.congrats-title{font-size:22px;font-weight:700;margin-bottom:8px;color:var(--c1d);}
+.congrats-sub{font-size:15px;color:var(--text2);margin-bottom:24px;line-height:1.5;}
+.congrats-btn{background:var(--c1);color:#fff;border:none;border-radius:14px;padding:14px 32px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;width:100%;}
+
+/* DEADLINE / LOCK */
+.period-locked .task-item{opacity:.5;pointer-events:none;}
+.period-locked .task-item.done{opacity:.8;}
+.deadline-badge{display:flex;align-items:center;gap:6px;padding:8px 16px;background:#fff8f0;border-top:1px solid #f0e0cc;font-size:12px;color:#a05c00;font-weight:600;}
+.deadline-badge.overridden{background:#f0fff4;border-color:#b2dfdb;color:#1b7a5a;}
+.admin-override-row{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:#fffbe6;border-top:1px solid var(--border);}
+
+/* TOGGLE SWITCH */
+.toggle-wrap{display:flex;align-items:center;gap:8px;}
+.toggle{position:relative;width:40px;height:22px;flex-shrink:0;}
+.toggle input{opacity:0;width:0;height:0;}
+.toggle-slider{position:absolute;inset:0;background:#ccc;border-radius:11px;cursor:pointer;transition:.2s;}
+.toggle-slider:before{content:'';position:absolute;width:18px;height:18px;left:2px;top:2px;background:#fff;border-radius:50%;transition:.2s;}
+.toggle input:checked+.toggle-slider{background:var(--c2);}
+.toggle input:checked+.toggle-slider:before{transform:translateX(18px);}
+
+/* CLOCK BAR */
+.clock-bar{position:sticky;top:54px;z-index:9;background:var(--c1d);color:#fff;display:flex;align-items:center;justify-content:space-between;padding:8px 18px;gap:10px;box-shadow:0 2px 6px rgba(0,0,0,.18);}
+.clock-now{font-size:26px;font-weight:700;letter-spacing:2px;font-variant-numeric:tabular-nums;font-family:'Courier New',Courier,monospace;}
+.clock-countdown{text-align:right;min-width:130px;}
+.clock-countdown-label{font-size:10px;opacity:.7;text-transform:uppercase;letter-spacing:.8px;margin-bottom:1px;}
+.clock-countdown-time{font-size:20px;font-weight:700;letter-spacing:1px;font-variant-numeric:tabular-nums;font-family:'Courier New',Courier,monospace;}
+.clock-countdown-name{font-size:10px;opacity:.75;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;}
+.clock-countdown.locked .clock-countdown-time{color:#ffb3b3;}
+.clock-countdown.all-done .clock-countdown-time{color:#a8ffcc;}
+
+/* QUOTE CARD */
+.quote-card{margin:10px 12px 0;background:linear-gradient(135deg,var(--c1l),#fff);border:1px solid var(--c1);border-radius:14px;padding:14px 16px;display:flex;align-items:flex-start;gap:10px;}
+.quote-icon{font-size:22px;flex-shrink:0;margin-top:2px;}
+.quote-text{font-size:13px;color:var(--c1d);line-height:1.6;font-style:italic;}
+.quote-author{font-size:11px;color:var(--text3);margin-top:4px;font-style:normal;font-weight:600;}
+
 /* PIN */
 #pin-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:var(--card);z-index:500;display:none;overflow-y:auto;}
 .pin-screen{display:flex;flex-direction:column;align-items:center;padding:60px 24px 40px;max-width:430px;margin:0 auto;}
@@ -256,8 +297,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <input type="text" id="pm-name" class="text-input" placeholder="Contoh: Saat Makan Siang">
       </div>
       <div style="margin-bottom:14px;">
-        <label style="font-size:13px;color:var(--text2);">Alarm</label>
+        <label style="font-size:13px;color:var(--text2);">Deadline (batas waktu centang)</label>
         <input type="time" id="pm-alarm" class="text-input" style="width:auto;">
+        <div style="font-size:11px;color:var(--text3);margin-top:4px;">Setelah jam ini, tugas tidak bisa dicentang lagi</div>
       </div>
       <div style="margin-bottom:14px;">
         <label style="font-size:13px;color:var(--text2);">Berlaku untuk</label><br>
@@ -282,6 +324,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     </div>
   </div>
 
+  <!-- Congrats Overlay -->
+  <div class="congrats-overlay" id="congrats-overlay" onclick="closeCongrats()">
+    <div class="congrats-box" onclick="event.stopPropagation()">
+      <span class="congrats-emoji" id="congrats-emoji">🎉</span>
+      <div class="congrats-title" id="congrats-title">Hebat sekali!</div>
+      <div class="congrats-sub" id="congrats-sub">Semua tugas wajib hari ini sudah selesai!</div>
+      <button class="congrats-btn" onclick="closeCongrats()">Terima kasih! 😊</button>
+    </div>
+  </div>
+
   <!-- HOME -->
   <div id="screen-home" class="screen active">
     <div class="top-bar">
@@ -291,7 +343,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <div class="star-pill">🥈 <span id="star-silver-display">0</span></div>
     </div>
     </div>
+    <div class="clock-bar" id="clock-bar">
+      <div class="clock-now" id="clock-now">00:00:00</div>
+      <div class="clock-countdown" id="clock-countdown"></div>
+    </div>
     <div class="date-bar" id="date-bar"></div>
+    <div id="quote-card-container"></div>
     <div class="day-tabs" id="day-tabs"></div>
     <div id="periods-container"></div>
   </div>
@@ -309,7 +366,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       </div>
       <div class="streak-box">
         <div class="streak-num" id="s-streak">0</div>
-        <div class="streak-txt">hari berturut-turut<br>semua tugas selesai 🔥</div>
+        <div class="streak-txt">hari berturut-turut<br>semua tugas <b>wajib</b> selesai 🔥</div>
       </div>
     </div>
     <div class="card">
@@ -366,6 +423,94 @@ const provider = new GoogleAuthProvider();
 const PALETTE = ['#7F77DD','#1D9E75','#D85A30','#D4537E','#BA7517','#378ADD','#639922','#888780'];
 const ICONS = ['🌅','🎒','🏠','⛅','🌙','🍽️','📚','🏃','🎮','🛁','😴','🙏','💪','🎨','🎵'];
 
+const QUOTES = {
+  pagi:[
+    {text:'Pagi yang baik dimulai dari niat yang baik! Yuk semangat!',icon:'🌅'},
+    {text:'Setiap pagi adalah kesempatan baru untuk jadi lebih baik dari kemarin.',icon:'✨'},
+    {text:'Hari ini kamu bisa melakukan hal-hal luar biasa. Mulai dari sekarang!',icon:'💪'},
+    {text:'Bangun pagi, hati senang, hari pun menjadi cemerlang!',icon:'☀️'},
+    {text:'Semangat pagi! Jangan lupa senyum, ya. Hari ini pasti menyenangkan!',icon:'😊'},
+    {text:'Satu kebaikan kecil di pagi hari bisa membuat hari orang lain menjadi lebih indah.',icon:'🌸'},
+    {text:'Orang yang rajin bukan karena dipaksa, tapi karena tahu tujuannya.',icon:'🎯'},
+    {text:'Mulailah hari dengan bersyukur — hati yang bersyukur selalu merasa cukup.',icon:'🙏'},
+    {text:'Kamu tidak harus sempurna. Kamu hanya perlu terus mencoba.',icon:'🌱'},
+    {text:'Bersikap baik kepada orang lain adalah cara terbaik untuk merasa bahagia.',icon:'💛'},
+  ],
+  siang:[
+    {text:'Sudah separuh jalan! Tetap semangat menyelesaikan tugasmu.',icon:'🏃'},
+    {text:'Istirahat sebentar, lalu lanjutkan lagi. Kamu pasti bisa!',icon:'💡'},
+    {text:'Setiap tugas yang selesai adalah satu langkah menuju bintang!',icon:'⭐'},
+    {text:'Kamu sudah kerja keras hari ini. Tetap fokus, ya!',icon:'🎯'},
+    {text:'Makan yang cukup, istirahat yang cukup, lalu semangat lagi!',icon:'🍱'},
+    {text:'Membantu orang lain tanpa diminta adalah tanda hati yang baik.',icon:'🤝'},
+    {text:'Kalau ada kesalahan, akui dan perbaiki. Itu tanda orang yang berani.',icon:'🦁'},
+    {text:'Orang yang sabar adalah orang yang kuat, bukan lemah.',icon:'🏔️'},
+    {text:'Jaga perkataanmu — kata yang baik bisa menyembuhkan, kata yang buruk bisa menyakiti.',icon:'💬'},
+    {text:'Merawat diri sendiri itu penting, supaya kamu bisa merawat orang lain juga.',icon:'💚'},
+  ],
+  sore:[
+    {text:'Sore ini, selesaikan yang tersisa. Kamu hampir sampai!',icon:'🌤️'},
+    {text:'Belajar itu investasi untuk masa depanmu yang cerah!',icon:'📚'},
+    {text:'Setiap PR yang dikerjakan membuat kamu semakin pintar!',icon:'✏️'},
+    {text:'Sedikit lagi! Semua tugas wajib menunggumu untuk diselesaikan.',icon:'🏁'},
+    {text:'Orang hebat bukan yang tidak pernah lelah, tapi yang terus berusaha!',icon:'🦁'},
+    {text:'Berbagi kebahagiaan tidak akan menguranginya — justru membuatnya bertambah.',icon:'🎁'},
+    {text:'Kebiasaan baik yang dibangun hari ini adalah hadiah untuk dirimu di masa depan.',icon:'🎀'},
+    {text:'Hormati semua orang, bukan karena mereka sempurna, tapi karena kamu adalah orang baik.',icon:'🌺'},
+    {text:'Jangan takut bertanya. Orang yang mau belajar adalah orang yang cerdas.',icon:'🔍'},
+    {text:'Kerapian dan kebersihan bukan soal aturan — itu soal menghargai diri sendiri.',icon:'🧹'},
+  ],
+  malam:[
+    {text:'Hari yang baik diakhiri dengan tugas yang tuntas. Ayo semangat!',icon:'🌙'},
+    {text:'Tidur nyenyak dimulai dari hati yang lega karena tugas selesai.',icon:'😴'},
+    {text:'Kamu sudah luar biasa hari ini! Istirahat yang baik, ya.',icon:'🌟'},
+    {text:'Besok adalah hari baru untuk berprestasi lagi. Selamat beristirahat!',icon:'💤'},
+    {text:'Berdoa sebelum tidur agar besok lebih baik lagi!',icon:'🙏'},
+    {text:'Sebelum tidur, pikirkan satu hal baik yang sudah kamu lakukan hari ini.',icon:'💛'},
+    {text:'Minta maaf kalau hari ini ada yang kamu sakiti. Hati yang bersih membuat tidur lebih nyenyak.',icon:'🕊️'},
+    {text:'Tubuhmu butuh istirahat supaya besok bisa belajar dan bermain dengan penuh semangat.',icon:'🌛'},
+    {text:'Orang yang bersyukur sebelum tidur akan bangun dengan hati yang lebih bahagia.',icon:'🌠'},
+    {text:'Hari ini mungkin tidak sempurna, tapi kamu sudah berusaha. Itu sudah sangat bagus!',icon:'🤍'},
+  ]
+};
+
+let _quoteCache = null;
+function getQuote(){
+  const h=new Date().getHours();
+  const period=h<11?'pagi':h<15?'siang':h<18?'sore':'malam';
+  if(!_quoteCache||_quoteCache.period!==period){
+    const list=QUOTES[period];
+    _quoteCache={period,quote:list[Math.floor(Math.random()*list.length)]};
+  }
+  return _quoteCache.quote;
+}
+function renderQuote(){
+  const q=getQuote();
+  const cont=document.getElementById('quote-card-container');
+  cont.innerHTML=`<div class="quote-card"><span class="quote-icon">${q.icon}</span><div><div class="quote-text">"${q.text}"</div></div></div>`;
+}
+
+const CONGRATS_MSGS=[
+  {emoji:'🎉',title:'Luar Biasa!',sub:'Semua tugas wajib hari ini sudah selesai! Kamu keren banget!'},
+  {emoji:'🏆',title:'Juara!',sub:'Wah, semua tugas wajib sudah beres! Kamu memang hebat!'},
+  {emoji:'⭐',title:'Bintang Hari Ini!',sub:'Semua tugas wajib selesai! Kamu layak dapat bintang emas!'},
+  {emoji:'🦁',title:'Berani dan Rajin!',sub:'Tidak ada tugas wajib yang terlewat hari ini. Kamu luar biasa!'},
+  {emoji:'🎊',title:'Yeay! Semua Beres!',sub:'Tugas wajib hari ini selesai semua! Kamu sudah berusaha keras!'},
+];
+let _congratsShown=false;
+function showCongrats(){
+  if(_congratsShown)return;
+  _congratsShown=true;
+  const m=CONGRATS_MSGS[Math.floor(Math.random()*CONGRATS_MSGS.length)];
+  document.getElementById('congrats-emoji').textContent=m.emoji;
+  document.getElementById('congrats-title').textContent=m.title;
+  document.getElementById('congrats-sub').textContent=m.sub;
+  document.getElementById('congrats-overlay').classList.add('show');
+  playDing();
+}
+window.closeCongrats=function(){document.getElementById('congrats-overlay').classList.remove('show');};
+
+
 const DEFAULT_CONFIG = {
   pin:'1234', childName:'Adik',
   achievements:[
@@ -395,7 +540,6 @@ let historyCache = [];
 let histFilter = 7;
 let adminUnlocked = false;
 let pinBuffer = '';
-let alarmTimers = [];
 let userId = null;
 let activeDayType = 'all';
 let pmSelectedColor = PALETTE[0];
@@ -551,6 +695,7 @@ function renderHome(){
   document.getElementById('star-gold-display').textContent=totalGoldAll();
   document.getElementById('star-silver-display').textContent=totalSilverAll();
   document.getElementById('date-bar').textContent=formatDate(new Date());
+  renderQuote();
   renderDayTabs();
   renderPeriods();
 }
@@ -559,11 +704,6 @@ function renderPeriods(){
   const cont=document.getElementById('periods-container');
   cont.innerHTML='';
   const dt=getDayType(new Date());
-  const visible=config.periods.filter(p=>{
-    if(activeDayType==='all') return true;
-    return p.dayType==='all'||p.dayType===activeDayType;
-  }).filter(p=>p.dayType==='all'||p.dayType===dt||activeDayType!=='all'||p.dayType===activeDayType);
-
   const filtered=config.periods.filter(p=>{
     if(activeDayType==='all') return p.dayType==='all'||p.dayType===dt;
     return p.dayType==='all'||p.dayType===activeDayType;
@@ -575,10 +715,13 @@ function renderPeriods(){
   }
   filtered.forEach((p,pi)=>{
     const color=p.color||PALETTE[pi%PALETTE.length];
+    const locked=isLocked(p);
+    const overridden=isOverridden(p);
     const done=p.tasks.filter(t=>todayData[t.id]).length;
     const total=p.tasks.length;
     const pct=total?Math.round(done/total*100):0;
     const collapsed=sessionStorage.getItem('col_'+p.id)==='1';
+
     const tasksHtml=p.tasks.length===0
       ?'<div class="empty-period">Belum ada tugas</div>'
       :p.tasks.map(t=>{
@@ -586,23 +729,33 @@ function renderPeriods(){
         const isDone=!!todayData[String(t.id)];
         const starIcon=isReq?'⭐':'🥈';
         const starClass=isReq?'star-gold':'star-silver';
-        return `<div class="task-item ${isDone?'done':''} ${isReq?'required':''}" onclick="toggleTask('${t.id}','${p.id}')">
-          <div class="task-check" style="${isDone?'background:'+color+';border-color:'+color:''}">
-            ${isDone?'✓':''}
+        const clickable=!locked||isDone;
+        return `<div class="task-item ${isDone?'done':''} ${isReq&&!locked?'required':''}" style="${locked&&!isDone?'opacity:.45;':''}${clickable?'':'pointer-events:none;'}" onclick="${clickable?`toggleTask('${t.id}','${p.id}')`:''}" >
+          <div class="task-check" style="${isDone?'background:'+color+';border-color:'+color:''}${locked&&!isDone?'border-color:#ccc':''}">
+            ${isDone?'✓':locked?'🔒':''}
           </div>
           <span class="task-label">${t.label}</span>
           <span class="task-pts ${isDone?starClass:''}">${isDone?'+':''}${t.pts} ${starIcon}</span>
         </div>`;
       }).join('');
+
+    const deadlineBadge=p.alarm
+      ?locked
+        ?`<div class="deadline-badge">🔒 Waktu sudah lewat deadline ${p.alarm} — tugas terkunci</div>`
+        :`<div class="deadline-badge" style="background:#f0fff4;border-color:#b2dfdb;color:#1b7a5a;">⏰ Deadline: ${p.alarm}</div>`
+      :'';
+
     const dayBadge=p.dayType==='weekday'?'<span style="font-size:11px;background:rgba(255,255,255,.2);padding:2px 8px;border-radius:10px;margin-left:6px;">Sekolah</span>':p.dayType==='weekend'?'<span style="font-size:11px;background:rgba(255,255,255,.2);padding:2px 8px;border-radius:10px;margin-left:6px;">Weekend</span>':'';
+    const lockIcon=locked?'🔒 ':'';
     const block=document.createElement('div');
     block.className='period-block';
     block.innerHTML=`
-      <div class="period-header" style="background:${color}" onclick="togglePeriod('${p.id}')">
-        <span>${p.icon}</span><span>${p.label}${dayBadge}</span>
+      <div class="period-header" style="background:${color}${locked?';opacity:.85':''}" onclick="togglePeriod('${p.id}')">
+        <span>${p.icon}</span><span>${lockIcon}${p.label}${dayBadge}</span>
         <span class="ph-progress">${done}/${total} ${collapsed?'▼':'▲'}</span>
       </div>
       <div class="progress-bar-wrap"><div class="progress-bar" style="width:${pct}%;background:${color}"></div></div>
+      ${deadlineBadge}
       <div class="period-tasks" id="pt-${p.id}" style="display:${collapsed?'none':'block'}">${tasksHtml}</div>`;
     cont.appendChild(block);
   });
@@ -617,6 +770,7 @@ window.togglePeriod=function(id){
 window.toggleTask=function(taskId,periodId){
   const p=config.periods.find(x=>x.id===periodId);
   if(!p)return;
+  if(isLocked(p)){showToast('🔒 Periode ini sudah terkunci');return;}
   const t=p.tasks.find(x=>String(x.id)===String(taskId));
   if(!t)return;
   const key=String(t.id);
@@ -629,9 +783,9 @@ window.toggleTask=function(taskId,periodId){
   if(idx>=0)historyCache[idx].data={...todayData};
   else historyCache.unshift({date:todayKey(),data:{...todayData}});
   renderHome();
-  const all=todayTasks();
-  if(all.length>0&&all.every(t2=>todayData[String(t2.id)]))
-    setTimeout(()=>showToast('🎉 Semua tugas selesai! Luar biasa!'),400);
+  const required=todayTasks().filter(t2=>t2.required!==false);
+  if(required.length>0&&required.every(t2=>todayData[String(t2.id)]))
+    setTimeout(()=>showCongrats(),400);
 };
 
 // ---- SUMMARY ----
@@ -774,8 +928,8 @@ function calcStreak(){
     const d=new Date();d.setDate(d.getDate()-i);
     const k=dateKey(d);
     const h=historyCache.find(x=>x.date===k);
-    const all=allTasksForDay(d);
-    if(all.length>0&&h&&all.every(t=>h.data[String(t.id)]))streak++;
+    const required=allTasksForDay(d).filter(t=>t.required!==false);
+    if(required.length>0&&h&&required.every(t=>h.data[String(t.id)]))streak++;
     else if(i>0)break;
   }
   return streak;
@@ -792,21 +946,34 @@ function renderAdmin(){
       <div class="admin-row"><label>PIN Admin</label><input type="number" id="newPinInput" style="font-size:14px;border:none;outline:none;text-align:right;background:transparent;color:var(--text);font-family:inherit;width:100px;" placeholder="PIN baru (4 angka)"></div>
     </div>
     <div class="admin-section">
-      <div class="admin-section-header">Alarm per Periode</div>
-      ${config.periods.map((p,pi)=>`
-        <div class="admin-row">
-          <span>${p.icon} ${p.label}</span>
-          <input type="time" class="alarm-time-input" value="${p.alarm||''}" id="alarm-${pi}" style="font-size:13px;border:1px solid var(--border2);border-radius:8px;padding:4px 8px;background:var(--bg);color:var(--text);font-family:inherit;">
-        </div>`).join('')}
+      <div class="admin-section-header">Deadline per Periode</div>
+      <div style="padding:10px 16px 4px;font-size:12px;color:var(--text3);">Setelah jam deadline, tugas tidak bisa dicentang. Admin bisa buka kunci di sini.</div>
+      ${config.periods.map((p,pi)=>{
+        const locked=isLocked(p);
+        const overridden=isOverridden(p);
+        const ovId='ov-'+p.id;
+        return `<div class="admin-row" style="flex-wrap:wrap;gap:6px;">
+          <div style="flex:1;min-width:120px;">
+            <div style="font-size:14px;">${p.icon} ${p.label}</div>
+            ${locked?'<div style="font-size:11px;color:#c0392b;margin-top:2px;">🔒 Terkunci sejak '+p.alarm+'</div>':p.alarm?'<div style="font-size:11px;color:var(--c2);margin-top:2px;">⏰ Deadline: '+p.alarm+'</div>':'<div style="font-size:11px;color:var(--text3);margin-top:2px;">Tidak ada deadline</div>'}
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
+            <input type="time" value="${p.alarm||''}" id="alarm-${pi}" style="font-size:13px;border:1px solid var(--border2);border-radius:8px;padding:4px 8px;background:var(--bg);color:var(--text);font-family:inherit;">
+            ${p.alarm?`<div class="toggle-wrap"><label style="font-size:12px;color:${overridden?'var(--c2)':'var(--text3)'};">${overridden?'Buka':'Kunci'}</label><label class="toggle"><input type="checkbox" id="${ovId}" ${overridden?'checked':''} onchange="toggleOverride('${p.id}',this.checked)"><span class="toggle-slider"></span></label></div>`:''}
+          </div>
+        </div>`;
+      }).join('')}
     </div>
     <div class="admin-section">
       <div class="admin-section-header">Achievement Mingguan</div>
       <div id="ach-admin-list">
         ${achs.map((a,ai)=>`
           <div class="ach-admin-item">
-            <span style="font-size:22px;">${a.icon}</span>
+            <select style="font-size:20px;border:1px solid var(--border2);border-radius:8px;padding:2px 4px;background:var(--bg);cursor:pointer;font-family:inherit;" onchange="config.achievements[${ai}].icon=this.value" title="Pilih ikon">
+              ${['🥉','🥈','🥇','🏆','🎖️','🎗️','🌟','💎','👑','🔥','🦁','🚀'].map(ic=>`<option value="${ic}" ${a.icon===ic?'selected':''}>${ic}</option>`).join('')}
+            </select>
             <input type="text" value="${a.title}" onchange="config.achievements[${ai}].title=this.value" style="flex:1;font-size:13px;border:none;outline:none;background:transparent;color:var(--text);font-family:inherit;">
-            <input type="number" class="ach-pts-input" value="${a.target}" min="1" onchange="config.achievements[${ai}].target=parseInt(this.value)||1" title="Target bintang">
+            <input type="number" class="ach-pts-input" value="${a.target}" min="1" onchange="config.achievements[${ai}].target=parseInt(this.value)||1" title="Target bintang wajib">
             <span style="font-size:12px;color:var(--text3);">⭐</span>
             <button class="del-btn" onclick="delAchievement(${ai})">✕</button>
           </div>`).join('')}
@@ -931,6 +1098,14 @@ window.addAchievement=function(){
   config.achievements.push({id:Date.now(),icon:'🎖️',title:'Achievement Baru',desc:'Deskripsi',target:50});
   renderAdmin();
 };
+window.toggleOverride=async function(periodId, checked){
+  if(!config.deadlineOverrides) config.deadlineOverrides={};
+  if(checked) config.deadlineOverrides[periodId]=true;
+  else delete config.deadlineOverrides[periodId];
+  await saveConfigFS();
+  renderHome();
+  showToast(checked?'🔓 Periode dibuka':'🔒 Periode dikunci kembali');
+};
 window.saveAdmin=async function(){
   config.childName=document.getElementById('childNameInput').value.trim()||'Adik';
   config.periods.forEach((p,pi)=>{
@@ -949,13 +1124,13 @@ window.saveAdmin=async function(){
   const np=document.getElementById('newPinInput').value.trim();
   if(np&&/^\d{4}$/.test(np))config.pin=np;
   await saveConfigFS();
-  scheduleAlarms();
   showToast('✓ Tersimpan!');
   setTimeout(()=>switchScreen('home'),500);
 };
 window.resetToday=async function(){
   if(!confirm('Reset semua centang hari ini?'))return;
   todayData={};await saveTodayFS();
+  _congratsShown=false;
   const idx=historyCache.findIndex(h=>h.date===todayKey());
   if(idx>=0)historyCache.splice(idx,1);
   showToast('Checklist direset');renderHome();
@@ -1004,7 +1179,7 @@ window.switchScreen=function(name){
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('screen-'+name).classList.add('active');
   document.getElementById('nav-'+name).classList.add('active');
-  if(name==='home')renderHome();
+  if(name==='home'){renderHome();startClock();}
   if(name==='summary')renderSummary();
   if(name==='admin')renderAdmin();
 };
@@ -1038,32 +1213,80 @@ function updatePinDots(){
   for(let i=0;i<4;i++){const d=document.getElementById('d'+i);if(d)d.className='pin-dot'+(i<pinBuffer.length?' filled':'');}
 }
 
-// ---- ALARM ----
+// ---- DEADLINE ----
+function isPastDeadline(p){
+  if(!p.alarm)return false;
+  const[hh,mm]=p.alarm.split(':').map(Number);
+  const now=new Date();
+  return now.getHours()>hh||(now.getHours()===hh&&now.getMinutes()>=mm);
+}
+function isOverridden(p){ return !!(config.deadlineOverrides&&config.deadlineOverrides[p.id]); }
+function isLocked(p){ return isPastDeadline(p)&&!isOverridden(p); }
+
 function scheduleAlarms(){
-  alarmTimers.forEach(t=>clearTimeout(t));alarmTimers=[];
-  if(!('Notification'in window))return;
-  config.periods.forEach(p=>{
-    if(!p.alarm)return;
-    const[hh,mm]=p.alarm.split(':').map(Number);
-    const now=new Date(),target=new Date();
-    target.setHours(hh,mm,0,0);
-    if(target<=now)target.setDate(target.getDate()+1);
-    const tid=setTimeout(()=>{
-      if(Notification.permission==='granted')
-        new Notification('Waktunya '+p.label+'! '+p.icon,{body:'Yuk cek tugasmu, '+(config.childName||'Adik')+'!'});
-      playAlarm();scheduleAlarms();
-    },target-now);
-    alarmTimers.push(tid);
-  });
+  // Re-render home every minute so deadline locks kick in automatically
+  clearInterval(window._deadlineTimer);
+  window._deadlineTimer=setInterval(()=>{
+    if(document.getElementById('screen-home').classList.contains('active')) renderHome();
+  },60000);
+}
+
+function startClock(){
+  clearInterval(window._clockTimer);
+  function tick(){
+    const nowEl=document.getElementById('clock-now');
+    const cdEl=document.getElementById('clock-countdown');
+    if(!nowEl||!cdEl)return;
+    const now=new Date();
+    const hh=String(now.getHours()).padStart(2,'0');
+    const mm=String(now.getMinutes()).padStart(2,'0');
+    const ss=String(now.getSeconds()).padStart(2,'0');
+    nowEl.textContent=hh+':'+mm+':'+ss;
+
+    // Find next upcoming deadline (not yet passed & not overridden) or nearest locked
+    const dt=getDayType(now);
+    const visible=config.periods.filter(p=>p.alarm&&(p.dayType==='all'||p.dayType===dt));
+    // Separate: upcoming = not yet past deadline, locked = already past
+    const upcoming=visible.filter(p=>!isPastDeadline(p)&&!isOverridden(p));
+    const lockedOnes=visible.filter(p=>isPastDeadline(p)&&!isOverridden(p));
+
+    if(upcoming.length){
+      // Show countdown to the nearest upcoming deadline
+      const next=upcoming.slice().sort((a,b)=>{
+        const[ah,am]=a.alarm.split(':').map(Number);
+        const[bh,bm]=b.alarm.split(':').map(Number);
+        return (ah*60+am)-(bh*60+bm);
+      })[0];
+      const[dh,dm]=next.alarm.split(':').map(Number);
+      const target=new Date(now);target.setHours(dh,dm,0,0);
+      const diff=Math.max(0,target-now);
+      const rs=Math.floor(diff/1000);
+      const ch=Math.floor(rs/3600);
+      const cm=Math.floor((rs%3600)/60);
+      const cs=rs%60;
+      const timeStr=(ch>0?String(ch).padStart(2,'0')+':':'')+String(cm).padStart(2,'0')+':'+String(cs).padStart(2,'0');
+      cdEl.className='clock-countdown';
+      cdEl.innerHTML=`<div class="clock-countdown-label">Deadline ${next.icon||''}</div><div class="clock-countdown-time">${timeStr}</div><div class="clock-countdown-name">${next.label}</div>`;
+    } else if(lockedOnes.length){
+      cdEl.className='clock-countdown locked';
+      cdEl.innerHTML=`<div class="clock-countdown-label">Semua deadline</div><div class="clock-countdown-time">Terkunci 🔒</div>`;
+    } else if(visible.length===0){
+      cdEl.className='clock-countdown all-done';
+      cdEl.innerHTML=`<div class="clock-countdown-time" style="font-size:13px;opacity:.8;">Tidak ada deadline</div>`;
+    } else {
+      // all overridden or no deadlines left today
+      cdEl.className='clock-countdown all-done';
+      cdEl.innerHTML=`<div class="clock-countdown-label">Status</div><div class="clock-countdown-time" style="font-size:14px;">Dibuka admin ✓</div>`;
+    }
+  }
+  tick();
+  window._clockTimer=setInterval(tick,1000);
 }
 function playDing(){
   try{const ctx=new(window.AudioContext||window.webkitAudioContext)();
     [523,659,784].forEach((f,i)=>{const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.value=f;g.gain.setValueAtTime(.25,ctx.currentTime+i*.12);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+i*.12+.3);o.start(ctx.currentTime+i*.12);o.stop(ctx.currentTime+i*.12+.3);});}catch(e){}
 }
-function playAlarm(){
-  try{const ctx=new(window.AudioContext||window.webkitAudioContext)();
-    [0,.35,.7].forEach(t=>{const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.value=880;g.gain.setValueAtTime(.4,ctx.currentTime+t);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+t+.3);o.start(ctx.currentTime+t);o.stop(ctx.currentTime+t+.3);});}catch(e){}
-}
+function playAlarm(){} // kept for compat, unused
 
 // ---- INIT ----
 onAuthStateChanged(auth,async(user)=>{
@@ -1075,7 +1298,7 @@ onAuthStateChanged(auth,async(user)=>{
     document.getElementById('app').style.display='block';
     renderHome();
     scheduleAlarms();
-    if('Notification'in window&&Notification.permission==='default')Notification.requestPermission();
+    startClock();
   } else {
     document.getElementById('loading-screen').style.display='none';
     document.getElementById('login-screen').style.display='flex';
