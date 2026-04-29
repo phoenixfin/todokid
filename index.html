@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%237F77DD'/><text y='46' x='10' font-size='40'>⭐</text></svg>">
 <title>Tugas Harianku</title>
 <style>
 :root {
@@ -950,6 +952,24 @@ function calcStreak(){
 }
 
 // ---- ADMIN ----
+function buildAdminTaskList(p, pi){
+  const dropBot = '<div class="period-empty-drop" data-pi="'+pi+'" style="margin-top:0;border-top:1px dashed var(--border2);border-radius:0;padding:5px;font-size:12px;border-left:none;border-right:none;border-bottom:none;">↓ Pindahkan ke sini</div>';
+  if(p.tasks.length===0) return '<div class="period-empty-drop" data-pi="'+pi+'">↓ Taruh task di sini</div>';
+  return p.tasks.map((t,ti)=>{
+    const req=t.required!==false;
+    const reqStyle=req?'background:#FFF3DC;border:1px solid #EF9F27;color:#7a5c00;':'background:#f0f0f0;border:1px solid #ccc;color:#666;';
+    return '<div class="admin-task-row" data-pi="'+pi+'" data-ti="'+ti+'">'
+      +'<span class="drag-handle" title="Geser untuk pindahkan">⠿</span>'
+      +'<span style="font-size:16px;margin-right:2px;" title="'+(req?'Wajib':'Bonus')+'">'+(req?'⭐':'🌟')+'</span>'
+      +'<input type="text" value="'+t.label+'" onchange="config.periods['+pi+'].tasks['+ti+'].label=this.value" style="flex:1;font-size:14px;border:none;outline:none;background:transparent;color:var(--text);font-family:inherit;">'
+      +'<span style="font-size:12px;color:var(--text3);">pts:</span>'
+      +'<input type="number" class="pts-input" value="'+t.pts+'" min="1" max="10" onchange="config.periods['+pi+'].tasks['+ti+'].pts=parseInt(this.value)||1">'
+      +'<button onclick="toggleRequired('+pi+','+ti+')" style="'+reqStyle+'border-radius:8px;font-size:11px;padding:3px 7px;cursor:pointer;font-family:inherit;">'+(req?'Wajib':'Bonus')+'</button>'
+      +'<button class="del-btn" onclick="delTask('+pi+','+ti+')">✕</button>'
+      +'</div>';
+  }).join('')+dropBot;
+}
+
 function renderAdmin(){
   const cont=document.getElementById('admin-content');
   const achs=config.achievements||[];
@@ -1006,20 +1026,7 @@ function renderAdmin(){
           <button class="del-period-btn" onclick="editPeriod(${pi})" style="margin-left:8px;">✏️</button>
           <button class="del-period-btn" onclick="delPeriod(${pi})">🗑️</button>
         </div>
-        <div id="atasks-${pi}">
-          ${p.tasks.length===0?`<div class="period-empty-drop" data-pi="${pi}">↓ Taruh task di sini</div>`:
-          p.tasks.map((t,ti)=>`
-            <div class="admin-task-row" data-pi="${pi}" data-ti="${ti}">
-              <span class="drag-handle" title="Geser untuk pindahkan">⠿</span>
-              <span style="font-size:16px;margin-right:2px;" title="${t.required!==false?'Wajib':'Bonus'}">${t.required!==false?'⭐':'🌟'}</span>
-              <input type="text" value="${t.label}" onchange="config.periods[${pi}].tasks[${ti}].label=this.value" style="flex:1;font-size:14px;border:none;outline:none;background:transparent;color:var(--text);font-family:inherit;">
-              <span style="font-size:12px;color:var(--text3);">pts:</span>
-              <input type="number" class="pts-input" value="${t.pts}" min="1" max="10" onchange="config.periods[${pi}].tasks[${ti}].pts=parseInt(this.value)||1">
-              <button onclick="toggleRequired(${pi},${ti})" style="background:${t.required!==false?'#FFF3DC':'#f0f0f0'};border:1px solid ${t.required!==false?'#EF9F27':'#ccc'};border-radius:8px;font-size:11px;padding:3px 7px;cursor:pointer;color:${t.required!==false?'#7a5c00':'#666'};font-family:inherit;">${t.required!==false?'Wajib':'Bonus'}</button>
-              <button class="del-btn" onclick="delTask(${pi},${ti})">✕</button>
-            </div>`).join('')+
-          `<div class="period-empty-drop" data-pi="${pi}" style="margin-top:0;border-top:1px dashed var(--border2);border-radius:0;padding:5px;font-size:12px;border-left:none;border-right:none;border-bottom:none;">↓ Pindahkan ke sini</div>`}
-        </div>
+        <div id="atasks-${pi}">${buildAdminTaskList(p,pi)}</div>
         <button class="add-task-btn" onclick="addTask(${pi})">＋ Tambah tugas</button>
       </div>`;
   });
@@ -1254,39 +1261,70 @@ function startClock(){
   function tick(){
     const nowEl=document.getElementById('clock-now');
     const cdEl=document.getElementById('clock-countdown');
+    const tbEl=document.getElementById('topbar-countdown');
     if(!nowEl||!cdEl)return;
-    const now=new Date();
-    const hh=String(now.getHours()).padStart(2,'0');
-    const mm=String(now.getMinutes()).padStart(2,'0');
-    const ss=String(now.getSeconds()).padStart(2,'0');
-    nowEl.textContent=hh+':'+mm+':'+ss;
 
-    // Find next upcoming deadline (not yet passed & not overridden) or nearest locked
+    // Current time display
+    const now=new Date();
+    nowEl.textContent=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
+
+    // Collect deadline periods for today
     const dt=getDayType(now);
     const visible=config.periods.filter(p=>p.alarm&&(p.dayType==='all'||p.dayType===dt));
-    // Separate: upcoming = not yet past deadline, locked = already past
     const upcoming=visible.filter(p=>!isPastDeadline(p)&&!isOverridden(p));
     const lockedOnes=visible.filter(p=>isPastDeadline(p)&&!isOverridden(p));
 
-    // Update topbar countdown
-    const tbEl=document.getElementById('topbar-countdown');
+    // Helper: sort upcoming by nearest
+    function nearestUpcoming(){
+      return upcoming.slice().sort((a,b)=>{
+        const[ah,am]=a.alarm.split(':').map(Number);
+        const[bh,bm]=b.alarm.split(':').map(Number);
+        return(ah*60+am)-(bh*60+bm);
+      })[0];
+    }
+
+    // Helper: build countdown string from seconds remaining
+    function fmtCountdown(rs, pad){
+      const ch=Math.floor(rs/3600), cm=Math.floor((rs%3600)/60), cs=rs%60;
+      const p=pad?s=>String(s).padStart(2,'0'):s=>s;
+      return (ch>0?p(ch)+':':'')+p(cm)+':'+String(cs).padStart(2,'0');
+    }
+
+    // ---- Clock-bar (large) ----
+    if(upcoming.length){
+      const next=nearestUpcoming();
+      const[dh,dm]=next.alarm.split(':').map(Number);
+      const target=new Date(now);target.setHours(dh,dm,0,0);
+      const rs=Math.max(0,Math.floor((target-now)/1000));
+      cdEl.className='clock-countdown';
+      cdEl.innerHTML='<div class="clock-countdown-label">Deadline '+next.icon+'</div>'
+        +'<div class="clock-countdown-time">'+fmtCountdown(rs,true)+'</div>'
+        +'<div class="clock-countdown-name">'+next.label+'</div>';
+    } else if(lockedOnes.length){
+      cdEl.className='clock-countdown locked';
+      cdEl.innerHTML='<div class="clock-countdown-label">Semua deadline</div><div class="clock-countdown-time">Terkunci 🔒</div>';
+    } else if(visible.length===0){
+      cdEl.className='clock-countdown all-done';
+      cdEl.innerHTML='<div class="clock-countdown-time" style="font-size:13px;opacity:.8;">Tidak ada deadline</div>';
+    } else {
+      cdEl.className='clock-countdown all-done';
+      cdEl.innerHTML='<div class="clock-countdown-label">Status</div><div class="clock-countdown-time" style="font-size:14px;">Dibuka admin ✓</div>';
+    }
+
+    // ---- Top-bar (small text) ----
     if(tbEl){
       if(upcoming.length){
-        const next2=upcoming.slice().sort((a,b)=>{const[ah,am]=a.alarm.split(':').map(Number);const[bh,bm]=b.alarm.split(':').map(Number);return(ah*60+am)-(bh*60+bm);})[0];
-        const[dh2,dm2]=next2.alarm.split(':').map(Number);
-        const target2=new Date(now);target2.setHours(dh2,dm2,0,0);
-        const diff2=Math.max(0,target2-now);
-        const rs2=Math.floor(diff2/1000);
-        const ch2=Math.floor(rs2/3600);
-        const cm2=Math.floor((rs2%3600)/60);
-        const cs2=rs2%60;
-        const urgent=rs2<300;
+        const next=nearestUpcoming();
+        const[dh,dm]=next.alarm.split(':').map(Number);
+        const target=new Date(now);target.setHours(dh,dm,0,0);
+        const rs=Math.max(0,Math.floor((target-now)/1000));
+        const ch=Math.floor(rs/3600), cm=Math.floor((rs%3600)/60), cs=rs%60;
         const parts=[];
-        if(ch2>0)parts.push(ch2+'j');
-        if(cm2>0||ch2>0)parts.push(cm2+'m');
-        parts.push(cs2+'d');
-        tbEl.textContent='⏰ Tinggal '+parts.join(' ')+' menuju '+next2.label;
-        tbEl.className='topbar-countdown'+(urgent?' urgent':'');
+        if(ch>0)parts.push(ch+'j');
+        if(cm>0||ch>0)parts.push(cm+'m');
+        parts.push(cs+'d');
+        tbEl.textContent='⏰ Tinggal '+parts.join(' ')+' menuju '+next.label;
+        tbEl.className='topbar-countdown'+(rs<300?' urgent':'');
       } else if(lockedOnes.length){
         tbEl.textContent='🔒 Semua deadline hari ini sudah lewat';
         tbEl.className='topbar-countdown';
@@ -1294,33 +1332,6 @@ function startClock(){
         tbEl.textContent='';
         tbEl.className='topbar-countdown';
       }
-    }
-      // Show countdown to the nearest upcoming deadline
-      const next=upcoming.slice().sort((a,b)=>{
-        const[ah,am]=a.alarm.split(':').map(Number);
-        const[bh,bm]=b.alarm.split(':').map(Number);
-        return (ah*60+am)-(bh*60+bm);
-      })[0];
-      const[dh,dm]=next.alarm.split(':').map(Number);
-      const target=new Date(now);target.setHours(dh,dm,0,0);
-      const diff=Math.max(0,target-now);
-      const rs=Math.floor(diff/1000);
-      const ch=Math.floor(rs/3600);
-      const cm=Math.floor((rs%3600)/60);
-      const cs=rs%60;
-      const timeStr=(ch>0?String(ch).padStart(2,'0')+':':'')+String(cm).padStart(2,'0')+':'+String(cs).padStart(2,'0');
-      cdEl.className='clock-countdown';
-      cdEl.innerHTML=`<div class="clock-countdown-label">Deadline ${next.icon||''}</div><div class="clock-countdown-time">${timeStr}</div><div class="clock-countdown-name">${next.label}</div>`;
-    } else if(lockedOnes.length){
-      cdEl.className='clock-countdown locked';
-      cdEl.innerHTML=`<div class="clock-countdown-label">Semua deadline</div><div class="clock-countdown-time">Terkunci 🔒</div>`;
-    } else if(visible.length===0){
-      cdEl.className='clock-countdown all-done';
-      cdEl.innerHTML=`<div class="clock-countdown-time" style="font-size:13px;opacity:.8;">Tidak ada deadline</div>`;
-    } else {
-      // all overridden or no deadlines left today
-      cdEl.className='clock-countdown all-done';
-      cdEl.innerHTML=`<div class="clock-countdown-label">Status</div><div class="clock-countdown-time" style="font-size:14px;">Dibuka admin ✓</div>`;
     }
   }
   tick();
