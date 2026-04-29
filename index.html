@@ -22,8 +22,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 #app{max-width:430px;margin:0 auto;background:var(--bg);min-height:100vh;}
 
 /* TOP BAR */
-.top-bar{background:var(--c1);color:#fff;padding:16px 16px 14px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,.15);}
+.top-bar{background:var(--c1);color:#fff;padding:12px 16px 10px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,.15);}
 .top-bar h1{font-size:18px;font-weight:600;}
+.topbar-countdown{font-size:12px;opacity:.88;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500;letter-spacing:.1px;}
+.topbar-countdown.urgent{color:#ffe082;font-weight:700;}
 .star-count{display:flex;align-items:center;gap:6px;font-size:16px;font-weight:600;background:rgba(255,255,255,.2);padding:4px 12px;border-radius:20px;}
 .date-bar{background:var(--c1l);color:var(--c1d);text-align:center;padding:8px 16px;font-size:13px;font-weight:600;}
 .sync-bar{background:#fffbe6;color:#7a5c00;text-align:center;padding:5px;font-size:12px;display:none;}
@@ -56,7 +58,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .task-item.required:not(.done) .task-check{border-color:#F5A623;}
 .task-item.required:not(.done) .task-label{font-weight:500;}
 .star-gold{color:#EF9F27;}
-.star-silver{color:#9E9E9E;}
+.star-silver{color:#f5a623;}
 .star-counts{display:flex;gap:8px;}
 .star-pill{display:flex;align-items:center;gap:4px;font-size:14px;font-weight:600;background:rgba(255,255,255,.2);padding:4px 10px;border-radius:16px;}
 
@@ -177,7 +179,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .toggle input:checked+.toggle-slider:before{transform:translateX(18px);}
 
 /* CLOCK BAR */
-.clock-bar{position:sticky;top:54px;z-index:9;background:var(--c1d);color:#fff;display:flex;align-items:center;justify-content:space-between;padding:8px 18px;gap:10px;box-shadow:0 2px 6px rgba(0,0,0,.18);}
+.clock-bar{position:sticky;top:62px;z-index:9;background:var(--c1d);color:#fff;display:flex;align-items:center;justify-content:space-between;padding:8px 18px;gap:10px;box-shadow:0 2px 6px rgba(0,0,0,.18);}
 .clock-now{font-size:26px;font-weight:700;letter-spacing:2px;font-variant-numeric:tabular-nums;font-family:'Courier New',Courier,monospace;}
 .clock-countdown{text-align:right;min-width:130px;}
 .clock-countdown-label{font-size:10px;opacity:.7;text-transform:uppercase;letter-spacing:.8px;margin-bottom:1px;}
@@ -191,6 +193,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .quote-icon{font-size:22px;flex-shrink:0;margin-top:2px;}
 .quote-text{font-size:13px;color:var(--c1d);line-height:1.6;font-style:italic;}
 .quote-author{font-size:11px;color:var(--text3);margin-top:4px;font-style:normal;font-weight:600;}
+
+/* DRAG & DROP ADMIN */
+.admin-task-row{cursor:grab;}
+.admin-task-row.dragging{opacity:.4;background:#e8e8ff;}
+.admin-task-row.drag-over-top{border-top:2px solid var(--c1);}
+.admin-task-row.drag-over-bot{border-bottom:2px solid var(--c1);}
+.period-admin.drop-target-empty .period-empty-drop{background:var(--c1l);border:2px dashed var(--c1);color:var(--c1);}
+.period-empty-drop{padding:12px;text-align:center;font-size:13px;color:var(--text3);border:2px dashed var(--border2);border-radius:8px;margin:8px 12px;border-radius:10px;transition:all .2s;}
+.drag-handle{font-size:16px;color:var(--text3);cursor:grab;padding:0 4px;flex-shrink:0;user-select:none;}
 
 /* PIN */
 #pin-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:var(--card);z-index:500;display:none;overflow-y:auto;}
@@ -337,10 +348,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   <!-- HOME -->
   <div id="screen-home" class="screen active">
     <div class="top-bar">
-      <h1 id="greeting">Hai! 👋</h1>
+      <div style="flex:1;min-width:0;">
+        <h1 id="greeting">Hai! 👋</h1>
+        <div class="topbar-countdown" id="topbar-countdown"></div>
+      </div>
       <div class="star-counts">
       <div class="star-pill">⭐ <span id="star-gold-display">0</span></div>
-      <div class="star-pill">🥈 <span id="star-silver-display">0</span></div>
+      <div class="star-pill">🌟 <span id="star-silver-display">0</span></div>
     </div>
     </div>
     <div class="clock-bar" id="clock-bar">
@@ -362,7 +376,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div class="stat-box"><div class="stat-val" id="s-done">0</div><div class="stat-lbl">tugas selesai</div></div>
         <div class="stat-box"><div class="stat-val" id="s-total">0</div><div class="stat-lbl">total tugas</div></div>
         <div class="stat-box"><div class="stat-val star-gold" id="s-gold">0 ⭐</div><div class="stat-lbl">bintang wajib</div></div>
-        <div class="stat-box"><div class="stat-val star-silver" id="s-silver">0 🥈</div><div class="stat-lbl">bintang bonus</div></div>
+        <div class="stat-box"><div class="stat-val star-silver" id="s-silver">0 🌟</div><div class="stat-lbl">bintang bonus</div></div>
       </div>
       <div class="streak-box">
         <div class="streak-num" id="s-streak">0</div>
@@ -373,7 +387,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <h2>Total bintang terkumpul</h2>
       <div style="display:flex;justify-content:center;gap:24px;padding:8px 0;">
         <div style="text-align:center;"><div style="font-size:32px;font-weight:700;color:#EF9F27;" id="s-total-gold">0 ⭐</div><div style="font-size:12px;color:var(--text2);margin-top:2px;">Wajib</div></div>
-        <div style="text-align:center;"><div style="font-size:32px;font-weight:700;color:#9E9E9E;" id="s-total-silver">0 🥈</div><div style="font-size:12px;color:var(--text2);margin-top:2px;">Bonus</div></div>
+        <div style="text-align:center;"><div style="font-size:32px;font-weight:700;color:#9E9E9E;" id="s-total-silver">0 🌟</div><div style="font-size:12px;color:var(--text2);margin-top:2px;">Bonus</div></div>
       </div>
     </div>
     <div id="weekly-reports-container"></div>
@@ -727,7 +741,7 @@ function renderPeriods(){
       :p.tasks.map(t=>{
         const isReq=t.required!==false;
         const isDone=!!todayData[String(t.id)];
-        const starIcon=isReq?'⭐':'🥈';
+        const starIcon=isReq?'⭐':'🌟';
         const starClass=isReq?'star-gold':'star-silver';
         const clickable=!locked||isDone;
         return `<div class="task-item ${isDone?'done':''} ${isReq&&!locked?'required':''}" style="${locked&&!isDone?'opacity:.45;':''}${clickable?'':'pointer-events:none;'}" onclick="${clickable?`toggleTask('${t.id}','${p.id}')`:''}" >
@@ -775,7 +789,7 @@ window.toggleTask=function(taskId,periodId){
   if(!t)return;
   const key=String(t.id);
   const isReq=t.required!==false;
-  const starIcon=isReq?'⭐':'🥈';
+  const starIcon=isReq?'⭐':'🌟';
   if(todayData[key]){delete todayData[key];showToast('-'+t.pts+' '+starIcon+' dibatalkan');}
   else{todayData[key]=t.pts;showToast('+'+t.pts+' '+starIcon+'!');playDing();}
   saveTodayFS();
@@ -796,9 +810,9 @@ function renderSummary(){
   document.getElementById('s-done').textContent=done;
   document.getElementById('s-total').textContent=all.length;
   document.getElementById('s-gold').textContent=todayGoldStars()+' ⭐';
-  document.getElementById('s-silver').textContent=todaySilverStars()+' 🥈';
+  document.getElementById('s-silver').textContent=todaySilverStars()+' 🌟';
   document.getElementById('s-total-gold').textContent=totalGoldAll()+' ⭐';
-  document.getElementById('s-total-silver').textContent=totalSilverAll()+' 🥈';
+  document.getElementById('s-total-silver').textContent=totalSilverAll()+' 🌟';
   document.getElementById('s-streak').textContent=calcStreak();
   renderWeeklyReports();
   renderHistory();
@@ -849,7 +863,7 @@ function renderWeeklyReports(){
     return `<div class="week-card">
       <div class="week-header" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
         <h3>${isCurrentWeek?'Minggu Ini':'Minggu '+formatDateShort(start)+' – '+formatDateShort(end)}</h3>
-        <span style="font-size:13px;font-weight:700;display:flex;gap:8px;"><span style="color:#EF9F27;">${stars}⭐</span><span style="color:#9E9E9E;">${allStars-stars}🥈</span></span>
+        <span style="font-size:13px;font-weight:700;display:flex;gap:8px;"><span style="color:#EF9F27;">${stars}⭐</span><span style="color:#9E9E9E;">${allStars-stars}🌟</span></span>
       </div>
       <div class="week-body" style="display:${isCurrentWeek?'block':'none'}">
         ${barsHtml}
@@ -879,7 +893,7 @@ function renderHistory(){
       const taskRows=p.tasks.map(t=>{
         const isDone=!!h.data[String(t.id)];
         const isReq=t.required!==false;
-        const starIcon=isReq?'⭐':'🥈';
+        const starIcon=isReq?'⭐':'🌟';
         return `<div class="hist-task-row">
           <div class="hist-task-dot ${isDone?'done':'miss'}"></div>
           <span class="hist-task-name ${isDone?'done':''}">${t.label}</span>
@@ -919,7 +933,7 @@ window.setHistFilter=async function(n,btn){
   if(n===0)await loadHistory(0);
   renderHistory();
   document.getElementById('s-total-gold').textContent=totalGoldAll()+' ⭐';
-  document.getElementById('s-total-silver').textContent=totalSilverAll()+' 🥈';
+  document.getElementById('s-total-silver').textContent=totalSilverAll()+' 🌟';
 };
 
 function calcStreak(){
@@ -993,15 +1007,18 @@ function renderAdmin(){
           <button class="del-period-btn" onclick="delPeriod(${pi})">🗑️</button>
         </div>
         <div id="atasks-${pi}">
-          ${p.tasks.map((t,ti)=>`
-            <div class="admin-task-row">
-              <span style="font-size:16px;margin-right:2px;" title="${t.required!==false?'Wajib':'Bonus'}">${t.required!==false?'⭐':'🥈'}</span>
+          ${p.tasks.length===0?`<div class="period-empty-drop" data-pi="${pi}">↓ Taruh task di sini</div>`:
+          p.tasks.map((t,ti)=>`
+            <div class="admin-task-row" data-pi="${pi}" data-ti="${ti}">
+              <span class="drag-handle" title="Geser untuk pindahkan">⠿</span>
+              <span style="font-size:16px;margin-right:2px;" title="${t.required!==false?'Wajib':'Bonus'}">${t.required!==false?'⭐':'🌟'}</span>
               <input type="text" value="${t.label}" onchange="config.periods[${pi}].tasks[${ti}].label=this.value" style="flex:1;font-size:14px;border:none;outline:none;background:transparent;color:var(--text);font-family:inherit;">
               <span style="font-size:12px;color:var(--text3);">pts:</span>
               <input type="number" class="pts-input" value="${t.pts}" min="1" max="10" onchange="config.periods[${pi}].tasks[${ti}].pts=parseInt(this.value)||1">
               <button onclick="toggleRequired(${pi},${ti})" style="background:${t.required!==false?'#FFF3DC':'#f0f0f0'};border:1px solid ${t.required!==false?'#EF9F27':'#ccc'};border-radius:8px;font-size:11px;padding:3px 7px;cursor:pointer;color:${t.required!==false?'#7a5c00':'#666'};font-family:inherit;">${t.required!==false?'Wajib':'Bonus'}</button>
               <button class="del-btn" onclick="delTask(${pi},${ti})">✕</button>
-            </div>`).join('')}
+            </div>`).join('')+
+          `<div class="period-empty-drop" data-pi="${pi}" style="margin-top:0;border-top:1px dashed var(--border2);border-radius:0;padding:5px;font-size:12px;border-left:none;border-right:none;border-bottom:none;">↓ Pindahkan ke sini</div>`}
         </div>
         <button class="add-task-btn" onclick="addTask(${pi})">＋ Tambah tugas</button>
       </div>`;
@@ -1025,6 +1042,7 @@ function renderAdmin(){
     <button class="danger-btn" style="margin-top:12px;background:var(--c1l);color:var(--c1);border-color:var(--c1);" onclick="doSignOut()">🚪 Keluar Akun</button>
     <div style="height:20px;"></div>`;
   cont.innerHTML=html;
+  initAdminDrag();
 }
 
 window.delTask=function(pi,ti){
@@ -1250,7 +1268,33 @@ function startClock(){
     const upcoming=visible.filter(p=>!isPastDeadline(p)&&!isOverridden(p));
     const lockedOnes=visible.filter(p=>isPastDeadline(p)&&!isOverridden(p));
 
-    if(upcoming.length){
+    // Update topbar countdown
+    const tbEl=document.getElementById('topbar-countdown');
+    if(tbEl){
+      if(upcoming.length){
+        const next2=upcoming.slice().sort((a,b)=>{const[ah,am]=a.alarm.split(':').map(Number);const[bh,bm]=b.alarm.split(':').map(Number);return(ah*60+am)-(bh*60+bm);})[0];
+        const[dh2,dm2]=next2.alarm.split(':').map(Number);
+        const target2=new Date(now);target2.setHours(dh2,dm2,0,0);
+        const diff2=Math.max(0,target2-now);
+        const rs2=Math.floor(diff2/1000);
+        const ch2=Math.floor(rs2/3600);
+        const cm2=Math.floor((rs2%3600)/60);
+        const cs2=rs2%60;
+        const urgent=rs2<300;
+        const parts=[];
+        if(ch2>0)parts.push(ch2+'j');
+        if(cm2>0||ch2>0)parts.push(cm2+'m');
+        parts.push(cs2+'d');
+        tbEl.textContent='⏰ Tinggal '+parts.join(' ')+' menuju '+next2.label;
+        tbEl.className='topbar-countdown'+(urgent?' urgent':'');
+      } else if(lockedOnes.length){
+        tbEl.textContent='🔒 Semua deadline hari ini sudah lewat';
+        tbEl.className='topbar-countdown';
+      } else {
+        tbEl.textContent='';
+        tbEl.className='topbar-countdown';
+      }
+    }
       // Show countdown to the nearest upcoming deadline
       const next=upcoming.slice().sort((a,b)=>{
         const[ah,am]=a.alarm.split(':').map(Number);
@@ -1287,6 +1331,73 @@ function playDing(){
     [523,659,784].forEach((f,i)=>{const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.value=f;g.gain.setValueAtTime(.25,ctx.currentTime+i*.12);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+i*.12+.3);o.start(ctx.currentTime+i*.12);o.stop(ctx.currentTime+i*.12+.3);});}catch(e){}
 }
 function playAlarm(){} // kept for compat, unused
+
+// ---- DRAG & DROP ADMIN TASKS ----
+let _dragTask=null; // {pi, ti, task}
+let _dragOverInfo=null;
+
+function initAdminDrag(){
+  document.querySelectorAll('.admin-task-row[data-pi]').forEach(row=>{
+    row.draggable=true;
+    row.addEventListener('dragstart',e=>{
+      const pi=+row.dataset.pi, ti=+row.dataset.ti;
+      _dragTask={pi,ti,task:config.periods[pi].tasks[ti]};
+      row.classList.add('dragging');
+      e.dataTransfer.effectAllowed='move';
+    });
+    row.addEventListener('dragend',()=>{
+      row.classList.remove('dragging');
+      document.querySelectorAll('.admin-task-row').forEach(r=>r.classList.remove('drag-over-top','drag-over-bot'));
+      document.querySelectorAll('.period-empty-drop').forEach(r=>r.style.background='');
+      _dragTask=null;_dragOverInfo=null;
+    });
+    row.addEventListener('dragover',e=>{
+      if(!_dragTask)return;
+      e.preventDefault();e.dataTransfer.dropEffect='move';
+      const rect=row.getBoundingClientRect();
+      const mid=rect.top+rect.height/2;
+      row.classList.remove('drag-over-top','drag-over-bot');
+      const pos=e.clientY<mid?'top':'bot';
+      row.classList.add('drag-over-'+pos);
+      _dragOverInfo={pi:+row.dataset.pi,ti:+row.dataset.ti,pos};
+    });
+    row.addEventListener('dragleave',()=>row.classList.remove('drag-over-top','drag-over-bot'));
+    row.addEventListener('drop',e=>{
+      e.preventDefault();
+      if(!_dragTask||!_dragOverInfo)return;
+      const{pi:fromPi,ti:fromTi,task}=_dragTask;
+      const{pi:toPi,ti:toTi,pos}=_dragOverInfo;
+      // Remove from source
+      config.periods[fromPi].tasks.splice(fromTi,1);
+      // Insert into dest (adjust index if same period and after source)
+      let insertAt=toTi;
+      if(fromPi===toPi&&toTi>fromTi)insertAt--;
+      if(pos==='bot')insertAt++;
+      insertAt=Math.max(0,Math.min(insertAt,config.periods[toPi].tasks.length));
+      config.periods[toPi].tasks.splice(insertAt,0,task);
+      renderAdmin();
+    });
+  });
+
+  // Drop target for empty period lists
+  document.querySelectorAll('.period-empty-drop').forEach(el=>{
+    el.addEventListener('dragover',e=>{
+      if(!_dragTask)return;
+      e.preventDefault();el.style.background='var(--c1l)';
+      _dragOverInfo={pi:+el.dataset.pi,ti:0,pos:'top',empty:true};
+    });
+    el.addEventListener('dragleave',()=>el.style.background='');
+    el.addEventListener('drop',e=>{
+      e.preventDefault();
+      if(!_dragTask)return;
+      const{pi:fromPi,ti:fromTi,task}=_dragTask;
+      const toPi=+el.dataset.pi;
+      config.periods[fromPi].tasks.splice(fromTi,1);
+      config.periods[toPi].tasks.push(task);
+      renderAdmin();
+    });
+  });
+}
 
 // ---- INIT ----
 onAuthStateChanged(auth,async(user)=>{
