@@ -1046,6 +1046,14 @@ function renderAdmin(){
     <button class="save-btn" onclick="saveAdmin()">💾 Simpan Semua Perubahan</button>
     <button class="danger-btn" onclick="resetToday()">🔄 Reset Checklist Hari Ini</button>
     <div class="admin-section" style="margin-top:12px;">
+      <div class="admin-section-header">✏️ Edit Checklist Hari Lalu</div>
+      <div style="padding:12px 16px 4px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <input type="date" id="past-date-picker" max="${todayKey()}" value="${todayKey()}" style="font-size:14px;border:1px solid var(--border2);border-radius:8px;padding:6px 10px;background:var(--bg);color:var(--text);font-family:inherit;" onchange="loadPastDayAdmin(this.value)">
+        <span style="font-size:12px;color:var(--text3);">Pilih tanggal untuk edit</span>
+      </div>
+      <div id="past-day-tasks" style="padding:0 8px 12px;"></div>
+    </div>
+    <div class="admin-section" style="margin-top:12px;">
       <div class="admin-section-header">Backup & Restore Config</div>
       <div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px;">
         <button class="secondary-btn" style="margin:0;" onclick="exportConfig()">📤 Export Config (JSON)</button>
@@ -1271,6 +1279,7 @@ function startClock(){
   function tick(){
     const nowEl=document.getElementById('clock-now');
     const cdEl=document.getElementById('clock-countdown');
+    const tbEl=document.getElementById('topbar-countdown');
     if(!nowEl||!cdEl)return;
 
     // Current time display
@@ -1307,8 +1316,8 @@ function startClock(){
       const rs=Math.max(0,Math.floor((target-now)/1000));
       const urgent=rs<300;
       cdEl.className='clock-countdown'+(urgent?' urgent':'');
-      cdEl.innerHTML='<div class="clock-countdown-text">Tinggal menuju '+next.icon+' '+next.label+'</div>'
-        +'<div class="clock-countdown-time">'+fmtCountdown(rs,true)+'</div>';
+      cdEl.innerHTML='<div class="clock-countdown-time">'+fmtCountdown(rs,true)+'</div>'
+        +'<div class="clock-countdown-text">lagi sebelum '+next.icon+' '+next.label+'</div>';
     } else if(lockedOnes.length){
       cdEl.className='clock-countdown locked';
       cdEl.innerHTML='<div class="clock-countdown-text">Semua deadline sudah lewat</div>'
@@ -1321,9 +1330,9 @@ function startClock(){
       cdEl.innerHTML='<div class="clock-countdown-text">Dibuka admin ✓</div>';
     }
 
-    // ---- Top-bar (removed, countdown is in clock-bar now) ----
-    const tbEl=document.getElementById('topbar-countdown');
-    if(tbEl) tbEl.textContent='';
+    // ---- Top-bar countdown element cleared (countdown now in clock-bar) ----
+    const tbEl2=document.getElementById('topbar-countdown');
+    if(tbEl2) tbEl2.textContent='';
   }
   tick();
   window._clockTimer=setInterval(tick,1000);
@@ -1334,112 +1343,189 @@ function playDing(){
 }
 function playAlarm(){} // kept for compat, unused
 
+window.loadPastDayAdmin=function(dateStr){
+  const cont=document.getElementById('past-day-tasks');
+  if(!cont)return;
+  const date=new Date(dateStr+'T00:00:00');
+  const cached=historyCache.find(h=>h.date===dateStr);
+  const data=cached?{...cached.data}:{};
+  const periods=periodsForDay(date);
+  if(!periods.length||!periods.some(p=>p.tasks.length)){
+    cont.innerHTML='<div style="padding:12px;color:var(--text3);font-size:13px;">Tidak ada tugas untuk tanggal ini.</div>';return;
+  }
+  cont.innerHTML=periods.map(p=>{
+    if(!p.tasks.length)return '';
+    const rows=p.tasks.map(t=>{
+      const isDone=!!data[String(t.id)];
+      const req=t.required!==false;
+      return '<div class="admin-task-row" style="cursor:pointer;" onclick="togglePastTask(\''+dateStr+'\',\''+t.id+'\',this)">'
+        +'<div class="task-check" style="width:22px;height:22px;border-radius:6px;border:2px solid '+(isDone?'var(--c1)':'var(--border2)')+';background:'+(isDone?'var(--c1)':'transparent')+';display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">'+(isDone?'✓':'')+'</div>'
+        +'<span style="flex:1;font-size:14px;color:var(--text);">'+(req?'⭐':'🌟')+' '+t.label+'</span>'
+        +'<span style="font-size:12px;color:var(--text3);">'+t.pts+'pts</span>'
+        +'</div>';
+    }).join('');
+    return '<div style="padding:8px 8px 2px;font-size:12px;font-weight:700;color:var(--text2);">'+p.icon+' '+p.label+'</div>'+rows;
+  }).join('');
+};
+
+window.togglePastTask=async function(dateStr, taskId, el){
+  const cached=historyCache.find(h=>h.date===dateStr);
+  const data=cached?cached.data:{};
+  const isDone=!!data[String(taskId)];
+  // Find task pts
+  let pts=1;
+  config.periods.forEach(p=>p.tasks.forEach(t=>{if(String(t.id)===String(taskId))pts=t.pts;}));
+  if(isDone){delete data[String(taskId)];}
+  else{data[String(taskId)]=pts;}
+  // Update historyCache
+  if(cached){cached.data=data;}
+  else{historyCache.unshift({date:dateStr,data});}
+  // Save to Firestore
+  const ref=doc(db,'users',userId,'days',dateStr);
+  await setDoc(ref,data);
+  // Update UI
+  const check=el.querySelector('.task-check')||el;
+  const nowDone=!!data[String(taskId)];
+  el.querySelector('.task-check').style.background=nowDone?'var(--c1)':'transparent';
+  el.querySelector('.task-check').style.borderColor=nowDone?'var(--c1)':'var(--border2)';
+  el.querySelector('.task-check').textContent=nowDone?'✓':'';
+  showToast(nowDone?'✓ Dicentang':'✗ Dilepas');
+};
+
 // ---- DRAG & DROP ADMIN TASKS ----
-let _dragTask=null; // {pi, ti, task}
+let _dragTask=null;
 let _dragOverInfo=null;
 
 function initAdminDrag(){
-  // ---- PERIOD REORDER ----
+  // ---- Shared pointer-drag state ----
+  let _ghost=null, _draggingEl=null, _dragType=null; // 'task' or 'period'
   let _dragPeriodIdx=null;
+
+  function createGhost(el){
+    const g=el.cloneNode(true);
+    g.style.cssText='position:fixed;pointer-events:none;z-index:9999;opacity:.8;box-shadow:0 4px 16px rgba(0,0,0,.25);border-radius:10px;left:0;top:0;width:'+el.offsetWidth+'px;background:var(--card);';
+    document.body.appendChild(g);
+    return g;
+  }
+  function removeGhost(){if(_ghost){_ghost.remove();_ghost=null;}}
+  function clearHighlights(){
+    document.querySelectorAll('.admin-task-row').forEach(r=>r.classList.remove('drag-over-top','drag-over-bot'));
+    document.querySelectorAll('.period-admin').forEach(r=>r.classList.remove('drag-period-over-top','drag-period-over-bot'));
+    document.querySelectorAll('.period-empty-drop').forEach(r=>r.style.background='');
+  }
+
+  function pointerDragStart(e, el, type){
+    e.preventDefault();
+    _draggingEl=el;_dragType=type;
+    el.classList.add(type==='period'?'dragging-period':'dragging');
+    _ghost=createGhost(el);
+    const touch=e.touches?e.touches[0]:e;
+    _ghost.style.left=(touch.clientX-20)+'px';
+    _ghost.style.top=(touch.clientY-20)+'px';
+    if(type==='period') _dragPeriodIdx=+el.dataset.pi;
+    if(type==='task'){
+      const pi=+el.dataset.pi, ti=+el.dataset.ti;
+      _dragTask={pi,ti,task:config.periods[pi].tasks[ti]};
+    }
+  }
+
+  function pointerDragMove(e){
+    if(!_draggingEl)return;
+    e.preventDefault();
+    const touch=e.touches?e.touches[0]:e;
+    _ghost.style.left=(touch.clientX-20)+'px';
+    _ghost.style.top=(touch.clientY-20)+'px';
+    clearHighlights();
+    // Find element under finger
+    _ghost.style.display='none';
+    const under=document.elementFromPoint(touch.clientX,touch.clientY);
+    _ghost.style.display='';
+    if(!under)return;
+
+    if(_dragType==='task'){
+      const row=under.closest('.admin-task-row[data-pi]');
+      const emptyDrop=under.closest('.period-empty-drop');
+      if(row&&row!==_draggingEl){
+        const rect=row.getBoundingClientRect();
+        const pos=touch.clientY<rect.top+rect.height/2?'top':'bot';
+        row.classList.add('drag-over-'+pos);
+        _dragOverInfo={pi:+row.dataset.pi,ti:+row.dataset.ti,pos};
+      } else if(emptyDrop){
+        emptyDrop.style.background='var(--c1l)';
+        _dragOverInfo={pi:+emptyDrop.dataset.pi,ti:0,pos:'top',empty:true};
+      } else {_dragOverInfo=null;}
+    }
+
+    if(_dragType==='period'){
+      const block=under.closest('.period-admin[data-pi]');
+      if(block&&+block.dataset.pi!==_dragPeriodIdx){
+        const rect=block.getBoundingClientRect();
+        block.classList.add(touch.clientY<rect.top+rect.height/2?'drag-period-over-top':'drag-period-over-bot');
+        _dragOverInfo={pi:+block.dataset.pi, clientY:touch.clientY, rect};
+      } else {_dragOverInfo=null;}
+    }
+  }
+
+  function pointerDragEnd(e){
+    if(!_draggingEl)return;
+    removeGhost();
+    clearHighlights();
+    _draggingEl.classList.remove('dragging','dragging-period');
+
+    if(_dragType==='task'&&_dragTask&&_dragOverInfo){
+      const{pi:fromPi,ti:fromTi,task}=_dragTask;
+      if(_dragOverInfo.empty){
+        config.periods[fromPi].tasks.splice(fromTi,1);
+        config.periods[_dragOverInfo.pi].tasks.push(task);
+      } else {
+        const{pi:toPi,ti:toTi,pos}=_dragOverInfo;
+        config.periods[fromPi].tasks.splice(fromTi,1);
+        let insertAt=toTi;
+        if(fromPi===toPi&&toTi>fromTi)insertAt--;
+        if(pos==='bot')insertAt++;
+        insertAt=Math.max(0,Math.min(insertAt,config.periods[toPi].tasks.length));
+        config.periods[toPi].tasks.splice(insertAt,0,task);
+      }
+      renderAdmin();
+    }
+
+    if(_dragType==='period'&&_dragPeriodIdx!==null&&_dragOverInfo){
+      const toIdx=_dragOverInfo.pi;
+      if(toIdx!==_dragPeriodIdx){
+        const rect=_dragOverInfo.rect;
+        const cy=_dragOverInfo.clientY;
+        let insertAt=toIdx+(cy>=rect.top+rect.height/2?1:0);
+        if(_dragPeriodIdx<insertAt)insertAt--;
+        const moved=config.periods.splice(_dragPeriodIdx,1)[0];
+        config.periods.splice(insertAt,0,moved);
+        renderAdmin();
+      }
+    }
+
+    _draggingEl=null;_dragType=null;_dragTask=null;_dragOverInfo=null;_dragPeriodIdx=null;
+  }
+
+  // ---- Attach to period handles ----
   document.querySelectorAll('.period-admin[data-pi]').forEach(block=>{
     const handle=block.querySelector('.period-drag-handle');
     if(!handle)return;
-    block.draggable=false; // only drag via handle
-    handle.addEventListener('mousedown',()=>{ block.draggable=true; });
-    handle.addEventListener('mouseleave',()=>{ if(!_dragPeriodIdx&&_dragPeriodIdx!==0) block.draggable=false; });
-    block.addEventListener('dragstart',e=>{
-      _dragPeriodIdx=+block.dataset.pi;
-      block.classList.add('dragging-period');
-      e.dataTransfer.effectAllowed='move';
-      e.stopPropagation();
-    });
-    block.addEventListener('dragend',()=>{
-      block.draggable=false;
-      block.classList.remove('dragging-period');
-      document.querySelectorAll('.period-admin').forEach(b=>b.classList.remove('drag-period-over-top','drag-period-over-bot'));
-      _dragPeriodIdx=null;
-    });
-    block.addEventListener('dragover',e=>{
-      if(_dragPeriodIdx===null||_dragTask)return;
-      e.preventDefault();e.stopPropagation();
-      const rect=block.getBoundingClientRect();
-      block.classList.remove('drag-period-over-top','drag-period-over-bot');
-      block.classList.add(e.clientY<rect.top+rect.height/2?'drag-period-over-top':'drag-period-over-bot');
-    });
-    block.addEventListener('dragleave',()=>block.classList.remove('drag-period-over-top','drag-period-over-bot'));
-    block.addEventListener('drop',e=>{
-      e.stopPropagation();
-      if(_dragPeriodIdx===null||_dragTask)return;
-      const toIdx=+block.dataset.pi;
-      if(_dragPeriodIdx===toIdx)return;
-      const rect=block.getBoundingClientRect();
-      let insertAt=toIdx+(e.clientY>=rect.top+rect.height/2?1:0);
-      if(_dragPeriodIdx<insertAt)insertAt--;
-      const moved=config.periods.splice(_dragPeriodIdx,1)[0];
-      config.periods.splice(insertAt,0,moved);
-      renderAdmin();
-    });
-  });
-  document.querySelectorAll('.admin-task-row[data-pi]').forEach(row=>{
-    row.draggable=true;
-    row.addEventListener('dragstart',e=>{
-      const pi=+row.dataset.pi, ti=+row.dataset.ti;
-      _dragTask={pi,ti,task:config.periods[pi].tasks[ti]};
-      row.classList.add('dragging');
-      e.dataTransfer.effectAllowed='move';
-    });
-    row.addEventListener('dragend',()=>{
-      row.classList.remove('dragging');
-      document.querySelectorAll('.admin-task-row').forEach(r=>r.classList.remove('drag-over-top','drag-over-bot'));
-      document.querySelectorAll('.period-empty-drop').forEach(r=>r.style.background='');
-      _dragTask=null;_dragOverInfo=null;
-    });
-    row.addEventListener('dragover',e=>{
-      if(!_dragTask)return;
-      e.preventDefault();e.dataTransfer.dropEffect='move';
-      const rect=row.getBoundingClientRect();
-      const mid=rect.top+rect.height/2;
-      row.classList.remove('drag-over-top','drag-over-bot');
-      const pos=e.clientY<mid?'top':'bot';
-      row.classList.add('drag-over-'+pos);
-      _dragOverInfo={pi:+row.dataset.pi,ti:+row.dataset.ti,pos};
-    });
-    row.addEventListener('dragleave',()=>row.classList.remove('drag-over-top','drag-over-bot'));
-    row.addEventListener('drop',e=>{
-      e.preventDefault();
-      if(!_dragTask||!_dragOverInfo)return;
-      const{pi:fromPi,ti:fromTi,task}=_dragTask;
-      const{pi:toPi,ti:toTi,pos}=_dragOverInfo;
-      // Remove from source
-      config.periods[fromPi].tasks.splice(fromTi,1);
-      // Insert into dest (adjust index if same period and after source)
-      let insertAt=toTi;
-      if(fromPi===toPi&&toTi>fromTi)insertAt--;
-      if(pos==='bot')insertAt++;
-      insertAt=Math.max(0,Math.min(insertAt,config.periods[toPi].tasks.length));
-      config.periods[toPi].tasks.splice(insertAt,0,task);
-      renderAdmin();
-    });
+    handle.addEventListener('touchstart',e=>pointerDragStart(e,block,'period'),{passive:false});
+    handle.addEventListener('mousedown',e=>{if(e.button===0)pointerDragStart(e,block,'period');});
   });
 
-  // Drop target for empty period lists
-  document.querySelectorAll('.period-empty-drop').forEach(el=>{
-    el.addEventListener('dragover',e=>{
-      if(!_dragTask)return;
-      e.preventDefault();el.style.background='var(--c1l)';
-      _dragOverInfo={pi:+el.dataset.pi,ti:0,pos:'top',empty:true};
-    });
-    el.addEventListener('dragleave',()=>el.style.background='');
-    el.addEventListener('drop',e=>{
-      e.preventDefault();
-      if(!_dragTask)return;
-      const{pi:fromPi,ti:fromTi,task}=_dragTask;
-      const toPi=+el.dataset.pi;
-      config.periods[fromPi].tasks.splice(fromTi,1);
-      config.periods[toPi].tasks.push(task);
-      renderAdmin();
-    });
+  // ---- Attach to task handles ----
+  document.querySelectorAll('.admin-task-row[data-pi]').forEach(row=>{
+    const handle=row.querySelector('.drag-handle');
+    if(!handle)return;
+    handle.addEventListener('touchstart',e=>pointerDragStart(e,row,'task'),{passive:false});
+    handle.addEventListener('mousedown',e=>{if(e.button===0)pointerDragStart(e,row,'task');});
   });
+
+  // ---- Global move/end ----
+  document.addEventListener('touchmove',pointerDragMove,{passive:false});
+  document.addEventListener('touchend',pointerDragEnd);
+  document.addEventListener('mousemove',e=>{if(_draggingEl)pointerDragMove(e);});
+  document.addEventListener('mouseup',e=>{if(_draggingEl)pointerDragEnd(e);});
 }
 
 // ---- INIT ----
