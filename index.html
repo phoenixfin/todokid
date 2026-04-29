@@ -181,14 +181,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .toggle input:checked+.toggle-slider:before{transform:translateX(18px);}
 
 /* CLOCK BAR */
-.clock-bar{position:sticky;top:62px;z-index:9;background:var(--c1d);color:#fff;display:flex;align-items:center;justify-content:space-between;padding:8px 18px;gap:10px;box-shadow:0 2px 6px rgba(0,0,0,.18);}
-.clock-now{font-size:26px;font-weight:700;letter-spacing:2px;font-variant-numeric:tabular-nums;font-family:'Courier New',Courier,monospace;}
-.clock-countdown{text-align:right;min-width:130px;}
-.clock-countdown-label{font-size:10px;opacity:.7;text-transform:uppercase;letter-spacing:.8px;margin-bottom:1px;}
+.clock-bar{position:sticky;top:62px;z-index:9;background:var(--c1d);color:#fff;display:flex;align-items:center;justify-content:space-between;padding:8px 18px;gap:12px;box-shadow:0 2px 6px rgba(0,0,0,.18);}
+.clock-now{font-size:26px;font-weight:700;letter-spacing:2px;font-variant-numeric:tabular-nums;font-family:'Courier New',Courier,monospace;flex-shrink:0;}
+.clock-countdown{text-align:right;flex:1;min-width:0;}
+.clock-countdown-text{font-size:13px;font-weight:600;opacity:.95;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .clock-countdown-time{font-size:20px;font-weight:700;letter-spacing:1px;font-variant-numeric:tabular-nums;font-family:'Courier New',Courier,monospace;}
-.clock-countdown-name{font-size:10px;opacity:.75;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;}
 .clock-countdown.locked .clock-countdown-time{color:#ffb3b3;}
+.clock-countdown.locked .clock-countdown-text{color:#ffb3b3;}
 .clock-countdown.all-done .clock-countdown-time{color:#a8ffcc;}
+.clock-countdown.urgent .clock-countdown-time{color:#ffe082;}
+.clock-countdown.urgent .clock-countdown-text{color:#ffe082;}
 
 /* QUOTE CARD */
 .quote-card{margin:10px 12px 0;background:linear-gradient(135deg,var(--c1l),#fff);border:1px solid var(--c1);border-radius:14px;padding:14px 16px;display:flex;align-items:flex-start;gap:10px;}
@@ -201,6 +203,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .admin-task-row.dragging{opacity:.4;background:#e8e8ff;}
 .admin-task-row.drag-over-top{border-top:2px solid var(--c1);}
 .admin-task-row.drag-over-bot{border-bottom:2px solid var(--c1);}
+.period-admin{transition:opacity .15s;}
+.period-admin.dragging-period{opacity:.4;}
+.period-admin.drag-period-over-top{border-top:3px solid var(--c1);}
+.period-admin.drag-period-over-bot{border-bottom:3px solid var(--c1);}
+.period-drag-handle{font-size:18px;color:rgba(255,255,255,.7);cursor:grab;padding:0 6px;user-select:none;flex-shrink:0;}
 .period-admin.drop-target-empty .period-empty-drop{background:var(--c1l);border:2px dashed var(--c1);color:var(--c1);}
 .period-empty-drop{padding:12px;text-align:center;font-size:13px;color:var(--text3);border:2px dashed var(--border2);border-radius:8px;margin:8px 12px;border-radius:10px;transition:all .2s;}
 .drag-handle{font-size:16px;color:var(--text3);cursor:grab;padding:0 4px;flex-shrink:0;user-select:none;}
@@ -352,7 +359,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="top-bar">
       <div style="flex:1;min-width:0;">
         <h1 id="greeting">Hai! 👋</h1>
-        <div class="topbar-countdown" id="topbar-countdown"></div>
       </div>
       <div class="star-counts">
       <div class="star-pill">⭐ <span id="star-gold-display">0</span></div>
@@ -992,8 +998,11 @@ function renderAdmin(){
             ${locked?'<div style="font-size:11px;color:#c0392b;margin-top:2px;">🔒 Terkunci sejak '+p.alarm+'</div>':p.alarm?'<div style="font-size:11px;color:var(--c2);margin-top:2px;">⏰ Deadline: '+p.alarm+'</div>':'<div style="font-size:11px;color:var(--text3);margin-top:2px;">Tidak ada deadline</div>'}
           </div>
           <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
-            <input type="time" value="${p.alarm||''}" id="alarm-${pi}" style="font-size:13px;border:1px solid var(--border2);border-radius:8px;padding:4px 8px;background:var(--bg);color:var(--text);font-family:inherit;">
-            ${p.alarm?`<div class="toggle-wrap"><label style="font-size:12px;color:${overridden?'var(--c2)':'var(--text3)'};">${overridden?'Buka':'Kunci'}</label><label class="toggle"><input type="checkbox" id="${ovId}" ${overridden?'checked':''} onchange="toggleOverride('${p.id}',this.checked)"><span class="toggle-slider"></span></label></div>`:''}
+            <input type="time" value="${p.alarm||''}" id="alarm-${pi}" style="font-size:13px;border:1px solid var(--border2);border-radius:8px;padding:4px 8px;background:var(--bg);color:var(--text);font-family:inherit;" onchange="renderAdmin()">
+            <div class="toggle-wrap" style="${p.alarm?'':'opacity:.35;pointer-events:none;'}" title="${p.alarm?'':'Set deadline dulu'}">
+              <label style="font-size:12px;color:${overridden?'var(--c2)':'var(--text3)'};">${overridden?'Buka':'Kunci'}</label>
+              <label class="toggle"><input type="checkbox" id="ov-${p.id}" ${overridden?'checked':''} ${p.alarm?'':'disabled'} onchange="toggleOverride('${p.id}',this.checked)"><span class="toggle-slider"></span></label>
+            </div>
           </div>
         </div>`;
       }).join('')}
@@ -1019,8 +1028,9 @@ function renderAdmin(){
     const color=p.color||PALETTE[pi%PALETTE.length];
     const dayLabel=p.dayType==='weekday'?'Hari Sekolah':p.dayType==='weekend'?'Akhir Pekan':'Setiap Hari';
     html+=`
-      <div class="period-admin">
+      <div class="period-admin" data-pi="${pi}">
         <div class="period-admin-header" style="background:${color}">
+          <span class="period-drag-handle" title="Geser untuk ubah urutan">⠿</span>
           <span>${p.icon}</span><span style="flex:1;">${p.label}</span>
           <span style="font-size:11px;background:rgba(255,255,255,.2);padding:2px 8px;border-radius:10px;">${dayLabel}</span>
           <button class="del-period-btn" onclick="editPeriod(${pi})" style="margin-left:8px;">✏️</button>
@@ -1261,7 +1271,6 @@ function startClock(){
   function tick(){
     const nowEl=document.getElementById('clock-now');
     const cdEl=document.getElementById('clock-countdown');
-    const tbEl=document.getElementById('topbar-countdown');
     if(!nowEl||!cdEl)return;
 
     // Current time display
@@ -1296,43 +1305,25 @@ function startClock(){
       const[dh,dm]=next.alarm.split(':').map(Number);
       const target=new Date(now);target.setHours(dh,dm,0,0);
       const rs=Math.max(0,Math.floor((target-now)/1000));
-      cdEl.className='clock-countdown';
-      cdEl.innerHTML='<div class="clock-countdown-label">Deadline '+next.icon+'</div>'
-        +'<div class="clock-countdown-time">'+fmtCountdown(rs,true)+'</div>'
-        +'<div class="clock-countdown-name">'+next.label+'</div>';
+      const urgent=rs<300;
+      cdEl.className='clock-countdown'+(urgent?' urgent':'');
+      cdEl.innerHTML='<div class="clock-countdown-text">Tinggal menuju '+next.icon+' '+next.label+'</div>'
+        +'<div class="clock-countdown-time">'+fmtCountdown(rs,true)+'</div>';
     } else if(lockedOnes.length){
       cdEl.className='clock-countdown locked';
-      cdEl.innerHTML='<div class="clock-countdown-label">Semua deadline</div><div class="clock-countdown-time">Terkunci 🔒</div>';
+      cdEl.innerHTML='<div class="clock-countdown-text">Semua deadline sudah lewat</div>'
+        +'<div class="clock-countdown-time">Terkunci 🔒</div>';
     } else if(visible.length===0){
       cdEl.className='clock-countdown all-done';
-      cdEl.innerHTML='<div class="clock-countdown-time" style="font-size:13px;opacity:.8;">Tidak ada deadline</div>';
+      cdEl.innerHTML='<div class="clock-countdown-text" style="opacity:.7;">Tidak ada deadline hari ini</div>';
     } else {
       cdEl.className='clock-countdown all-done';
-      cdEl.innerHTML='<div class="clock-countdown-label">Status</div><div class="clock-countdown-time" style="font-size:14px;">Dibuka admin ✓</div>';
+      cdEl.innerHTML='<div class="clock-countdown-text">Dibuka admin ✓</div>';
     }
 
-    // ---- Top-bar (small text) ----
-    if(tbEl){
-      if(upcoming.length){
-        const next=nearestUpcoming();
-        const[dh,dm]=next.alarm.split(':').map(Number);
-        const target=new Date(now);target.setHours(dh,dm,0,0);
-        const rs=Math.max(0,Math.floor((target-now)/1000));
-        const ch=Math.floor(rs/3600), cm=Math.floor((rs%3600)/60), cs=rs%60;
-        const parts=[];
-        if(ch>0)parts.push(ch+'j');
-        if(cm>0||ch>0)parts.push(cm+'m');
-        parts.push(cs+'d');
-        tbEl.textContent='⏰ Tinggal '+parts.join(' ')+' menuju '+next.label;
-        tbEl.className='topbar-countdown'+(rs<300?' urgent':'');
-      } else if(lockedOnes.length){
-        tbEl.textContent='🔒 Semua deadline hari ini sudah lewat';
-        tbEl.className='topbar-countdown';
-      } else {
-        tbEl.textContent='';
-        tbEl.className='topbar-countdown';
-      }
-    }
+    // ---- Top-bar (removed, countdown is in clock-bar now) ----
+    const tbEl=document.getElementById('topbar-countdown');
+    if(tbEl) tbEl.textContent='';
   }
   tick();
   window._clockTimer=setInterval(tick,1000);
@@ -1348,6 +1339,47 @@ let _dragTask=null; // {pi, ti, task}
 let _dragOverInfo=null;
 
 function initAdminDrag(){
+  // ---- PERIOD REORDER ----
+  let _dragPeriodIdx=null;
+  document.querySelectorAll('.period-admin[data-pi]').forEach(block=>{
+    const handle=block.querySelector('.period-drag-handle');
+    if(!handle)return;
+    block.draggable=false; // only drag via handle
+    handle.addEventListener('mousedown',()=>{ block.draggable=true; });
+    handle.addEventListener('mouseleave',()=>{ if(!_dragPeriodIdx&&_dragPeriodIdx!==0) block.draggable=false; });
+    block.addEventListener('dragstart',e=>{
+      _dragPeriodIdx=+block.dataset.pi;
+      block.classList.add('dragging-period');
+      e.dataTransfer.effectAllowed='move';
+      e.stopPropagation();
+    });
+    block.addEventListener('dragend',()=>{
+      block.draggable=false;
+      block.classList.remove('dragging-period');
+      document.querySelectorAll('.period-admin').forEach(b=>b.classList.remove('drag-period-over-top','drag-period-over-bot'));
+      _dragPeriodIdx=null;
+    });
+    block.addEventListener('dragover',e=>{
+      if(_dragPeriodIdx===null||_dragTask)return;
+      e.preventDefault();e.stopPropagation();
+      const rect=block.getBoundingClientRect();
+      block.classList.remove('drag-period-over-top','drag-period-over-bot');
+      block.classList.add(e.clientY<rect.top+rect.height/2?'drag-period-over-top':'drag-period-over-bot');
+    });
+    block.addEventListener('dragleave',()=>block.classList.remove('drag-period-over-top','drag-period-over-bot'));
+    block.addEventListener('drop',e=>{
+      e.stopPropagation();
+      if(_dragPeriodIdx===null||_dragTask)return;
+      const toIdx=+block.dataset.pi;
+      if(_dragPeriodIdx===toIdx)return;
+      const rect=block.getBoundingClientRect();
+      let insertAt=toIdx+(e.clientY>=rect.top+rect.height/2?1:0);
+      if(_dragPeriodIdx<insertAt)insertAt--;
+      const moved=config.periods.splice(_dragPeriodIdx,1)[0];
+      config.periods.splice(insertAt,0,moved);
+      renderAdmin();
+    });
+  });
   document.querySelectorAll('.admin-task-row[data-pi]').forEach(row=>{
     row.draggable=true;
     row.addEventListener('dragstart',e=>{
