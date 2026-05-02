@@ -29,14 +29,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .topbar-countdown{font-size:12px;opacity:.88;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500;letter-spacing:.1px;}
 .topbar-countdown.urgent{color:#ffe082;font-weight:700;}
 .star-count{display:flex;align-items:center;gap:6px;font-size:16px;font-weight:600;background:rgba(255,255,255,.2);padding:4px 12px;border-radius:20px;}
-.date-bar{background:var(--c1l);color:var(--c1d);text-align:center;padding:8px 16px;font-size:13px;font-weight:600;}
+.date-bar{background:var(--c1l);color:var(--c1d);text-align:center;padding:10px 16px;font-size:13px;font-weight:600;}
 .sync-bar{background:#fffbe6;color:#7a5c00;text-align:center;padding:5px;font-size:12px;display:none;}
 
 /* DAY TYPE TABS */
-.day-tabs{display:flex;gap:0;background:var(--card);border-bottom:1px solid var(--border);overflow-x:auto;scrollbar-width:none;}
-.day-tabs::-webkit-scrollbar{display:none;}
-.day-tab{flex-shrink:0;padding:10px 16px;font-size:13px;font-weight:600;color:var(--text3);cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;}
-.day-tab.active{color:var(--c1);border-bottom-color:var(--c1);}
+.day-tabs{padding:6px 12px 0;}
+.day-type-badge{display:inline-block;padding:4px 14px;background:var(--c1l);color:var(--c1d);border-radius:20px;font-size:12px;font-weight:700;}
 
 /* PERIODS */
 .period-block{margin:12px 12px 0;}
@@ -326,7 +324,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <select id="pm-daytype" class="select-input" style="margin-top:8px;width:100%;">
           <option value="all">Setiap hari</option>
           <option value="weekday">Hari sekolah (Senin–Jumat)</option>
-          <option value="weekend">Akhir pekan (Sabtu–Minggu)</option>
+          <option value="weekend">Hari libur (Sabtu–Minggu)</option>
         </select>
       </div>
       <div style="margin-bottom:14px;">
@@ -563,7 +561,6 @@ let histFilter = 7;
 let adminUnlocked = false;
 let pinBuffer = '';
 let userId = null;
-let activeDayType = 'all';
 let pmSelectedColor = PALETTE[0];
 let pmSelectedIcon = ICONS[0];
 
@@ -577,6 +574,10 @@ function dateKey(d) {
 }
 function getDayType(d) {
   const dow = d.getDay();
+  const key = dateKey(d);
+  // Check holiday override for this specific date
+  const holidays = config.holidays || {};
+  if(holidays[key]) return 'weekend';
   return (dow===0||dow===6)?'weekend':'weekday';
 }
 function periodsForDay(d) {
@@ -690,25 +691,16 @@ window.loginGoogle=async function(){
   }
 };
 
-// ---- DAY TABS ----
 function renderDayTabs(){
+  // No tabs needed — show today's type label only as info
   const tabs=document.getElementById('day-tabs');
   const dt=getDayType(new Date());
-  const tabDefs=[
-    {key:'all',label:'Semua'},
-    {key:dt,label:dt==='weekday'?'Hari Sekolah':'Akhir Pekan'},
-  ];
-  // Also add any unique dayTypes in config
-  const extras=['weekday','weekend'].filter(x=>x!==dt&&config.periods.some(p=>p.dayType===x));
-  extras.forEach(x=>tabDefs.push({key:x,label:x==='weekday'?'Hari Sekolah':'Akhir Pekan'}));
-  tabs.innerHTML=tabDefs.map(t=>`<div class="day-tab${activeDayType===t.key?' active':''}" onclick="setDayTab('${t.key}')">${t.label}</div>`).join('');
+  const isHoliday=todayIsHoliday();
+  const label=dt==='weekend'
+    ? (isHoliday?'🏖️ Hari Libur (override admin)':'🏖️ Hari Libur')
+    : '📚 Hari Sekolah';
+  tabs.innerHTML=`<div class="day-type-badge">${label}</div>`;
 }
-window.setDayTab=function(key){
-  activeDayType=key;
-  renderDayTabs();
-  renderPeriods();
-};
-
 // ---- HOME ----
 function renderHome(){
   const h=new Date().getHours();
@@ -726,10 +718,7 @@ function renderPeriods(){
   const cont=document.getElementById('periods-container');
   cont.innerHTML='';
   const dt=getDayType(new Date());
-  const filtered=config.periods.filter(p=>{
-    if(activeDayType==='all') return p.dayType==='all'||p.dayType===dt;
-    return p.dayType==='all'||p.dayType===activeDayType;
-  });
+  const filtered=config.periods.filter(p=>p.dayType==='all'||p.dayType===dt);
 
   if(!filtered.length){
     cont.innerHTML='<div style="padding:32px;text-align:center;color:var(--text3);font-size:14px;">Tidak ada periode untuk hari ini</div>';
@@ -767,7 +756,7 @@ function renderPeriods(){
         :`<div class="deadline-badge" style="background:#f0fff4;border-color:#b2dfdb;color:#1b7a5a;">⏰ Deadline: ${p.alarm}</div>`
       :'';
 
-    const dayBadge=p.dayType==='weekday'?'<span style="font-size:11px;background:rgba(255,255,255,.2);padding:2px 8px;border-radius:10px;margin-left:6px;">Sekolah</span>':p.dayType==='weekend'?'<span style="font-size:11px;background:rgba(255,255,255,.2);padding:2px 8px;border-radius:10px;margin-left:6px;">Weekend</span>':'';
+    const dayBadge=p.dayType==='weekday'?'<span style="font-size:11px;background:rgba(255,255,255,.2);padding:2px 8px;border-radius:10px;margin-left:6px;">Sekolah</span>':p.dayType==='weekend'?'<span style="font-size:11px;background:rgba(255,255,255,.2);padding:2px 8px;border-radius:10px;margin-left:6px;">Libur</span>':'';
     const lockIcon=locked?'🔒 ':'';
     const block=document.createElement('div');
     block.className='period-block';
@@ -958,6 +947,18 @@ function calcStreak(){
 }
 
 // ---- ADMIN ----
+function todayIsHoliday(){
+  return !!(config.holidays && config.holidays[todayKey()]);
+}
+window.toggleHolidayToday=async function(checked){
+  if(!config.holidays) config.holidays={};
+  if(checked) config.holidays[todayKey()]=true;
+  else delete config.holidays[todayKey()];
+  await saveConfigFS();
+  renderHome();
+  showToast(checked?'🏖️ Hari ini ditandai Hari Libur':'📅 Kembali ke jadwal normal');
+};
+
 function buildAdminTaskList(p, pi){
   const dropBot = '<div class="period-empty-drop" data-pi="'+pi+'" style="margin-top:0;border-top:1px dashed var(--border2);border-radius:0;padding:5px;font-size:12px;border-left:none;border-right:none;border-bottom:none;">↓ Pindahkan ke sini</div>';
   if(p.tasks.length===0) return '<div class="period-empty-drop" data-pi="'+pi+'">↓ Taruh task di sini</div>';
@@ -984,6 +985,13 @@ function renderAdmin(){
       <div class="admin-section-header">Umum</div>
       <div class="admin-row"><label>Nama Anak</label><input type="text" id="childNameInput" style="font-size:14px;border:none;outline:none;text-align:right;background:transparent;color:var(--text);font-family:inherit;width:150px;" value="${config.childName||'Adik'}"></div>
       <div class="admin-row"><label>PIN Admin</label><input type="number" id="newPinInput" style="font-size:14px;border:none;outline:none;text-align:right;background:transparent;color:var(--text);font-family:inherit;width:100px;" placeholder="PIN baru (4 angka)"></div>
+      <div class="admin-row" style="background:${todayIsHoliday()?'#fff3f0':''};">
+        <div>
+          <div style="font-size:14px;font-weight:600;">Hari ini = Hari Libur</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px;">Override untuk tanggal merah / libur nasional</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="holidayTodayToggle" ${todayIsHoliday()?'checked':''} onchange="toggleHolidayToday(this.checked)"><span class="toggle-slider"></span></label>
+      </div>
     </div>
     <div class="admin-section">
       <div class="admin-section-header">Deadline per Periode</div>
@@ -1026,7 +1034,7 @@ function renderAdmin(){
 
   config.periods.forEach((p,pi)=>{
     const color=p.color||PALETTE[pi%PALETTE.length];
-    const dayLabel=p.dayType==='weekday'?'Hari Sekolah':p.dayType==='weekend'?'Akhir Pekan':'Setiap Hari';
+    const dayLabel=p.dayType==='weekday'?'Hari Sekolah':p.dayType==='weekend'?'Hari Libur':'Setiap Hari';
     html+=`
       <div class="period-admin" data-pi="${pi}">
         <div class="period-admin-header" style="background:${color}">
