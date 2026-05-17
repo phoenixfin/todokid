@@ -19,6 +19,47 @@
   --text:#1a1a1a;--text2:#666;--text3:#aaa;
   --border:#e0e0e0;--border2:#ccc;
 }
+body.dark {
+  --c1:#9D96E8;--c1l:#2a2850;--c1d:#c4bfff;
+  --c2:#27c98f;--c2l:#0d2e22;
+  --c3:#e8795a;--c3l:#2e1a12;
+  --c4:#e07299;--c4l:#2e1220;
+  --c5:#d4930a;--c5l:#2a1f05;--c5d:#f0c060;
+  --star:#f0b030;
+  --bg:#121212;--card:#1e1e1e;
+  --text:#f0f0f0;--text2:#aaa;--text3:#666;
+  --border:#2e2e2e;--border2:#444;
+}
+body.dark .top-bar{background:#1a1870;}
+body.dark .clock-bar{background:#0f0e3a;}
+body.dark .date-bar{background:var(--c1l);color:var(--c1d);}
+body.dark .pin-key{background:var(--card);color:var(--text);border-color:var(--border2);}
+body.dark .pin-key:active{background:var(--bg);}
+body.dark .select-input{background:var(--card);color:var(--text);}
+body.dark .admin-task-row.dragging{background:#2a2850;}
+body.dark input[type=time]{background:var(--card);color:var(--text);}
+body.dark .week-bar-fill{background:var(--c1);}
+body.dark .achievement-item.unlocked{background:var(--c5l);border-color:var(--c5);}
+body.dark .streak-box{background:var(--c5l);}
+body.dark .google-btn{background:var(--card);color:var(--text);border-color:var(--border2);}
+body.dark .modal-box{background:var(--card);}
+body.dark .btn-cancel{background:var(--bg);color:var(--text);}
+body.dark .congrats-box{background:var(--card);}
+body.dark .sync-bar{background:#2a2200;color:#f0c060;}
+body.dark .toast{background:rgba(240,240,240,.15);color:#fff;}
+body.dark .deadline-badge{background:#1e1200;border-color:#5a3800;color:#f0b060;}
+body.dark .deadline-badge.overridden{background:#0d2a1e;border-color:#1a6040;color:#4dd4a0;}
+body.dark .admin-override-row{background:#1e1c00;}
+body.dark .quote-card{background:linear-gradient(135deg,var(--c1l),#1a1a2e);border-color:var(--c1);}
+body.dark .quote-text{color:var(--c1d);}
+body.dark .history-day-header{background:var(--bg);}
+body.dark .filter-btn{background:var(--bg);color:var(--text2);border-color:var(--border2);}
+body.dark .filter-btn.active{background:var(--c1);color:#fff;}
+body.dark .task-item.required:not(.done){background:#221a00;border-left-color:#c87f00;}
+body.dark .task-item.required:not(.done) .task-check{border-color:#c87f00;}
+body.dark .bottom-nav{background:var(--card);border-top-color:var(--border);}
+body.dark #pin-overlay{background:var(--card);}
+body.dark #loading-screen{background:var(--card);}
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
 #app{max-width:430px;margin:0 auto;background:var(--bg);min-height:100vh;}
@@ -361,6 +402,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <div class="star-counts">
       <div class="star-pill">⭐ <span id="star-gold-display">0</span></div>
       <div class="star-pill">🌟 <span id="star-silver-display">0</span></div>
+      <button onclick="toggleDarkMode()" id="dark-mode-btn" style="background:rgba(255,255,255,.2);border:none;border-radius:50%;width:32px;height:32px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;" title="Mode gelap/terang">🌙</button>
     </div>
     </div>
     <div class="clock-bar" id="clock-bar">
@@ -424,7 +466,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, collection, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBNl13HGuohUtSWHrKN7twFYhS0XqpeTiM",
@@ -984,7 +1026,7 @@ function renderAdmin(){
     <div class="admin-section">
       <div class="admin-section-header">Umum</div>
       <div class="admin-row"><label>Nama Anak</label><input type="text" id="childNameInput" style="font-size:14px;border:none;outline:none;text-align:right;background:transparent;color:var(--text);font-family:inherit;width:150px;" value="${config.childName||'Adik'}"></div>
-      <div class="admin-row"><label>PIN Admin</label><input type="number" id="newPinInput" style="font-size:14px;border:none;outline:none;text-align:right;background:transparent;color:var(--text);font-family:inherit;width:100px;" placeholder="PIN baru (4 angka)"></div>
+      <div class="admin-row"><label>PIN Admin</label><input type="text" inputmode="numeric" maxlength="4" id="newPinInput" style="font-size:14px;border:none;outline:none;text-align:right;background:transparent;color:var(--text);font-family:inherit;width:100px;" placeholder="PIN baru (4 angka)"></div>
       <div class="admin-row" style="background:${todayIsHoliday()?'#fff3f0':''};">
         <div>
           <div style="font-size:14px;font-weight:600;">Hari ini = Hari Libur</div>
@@ -1060,6 +1102,9 @@ function renderAdmin(){
         <span style="font-size:12px;color:var(--text3);">Pilih tanggal untuk edit</span>
       </div>
       <div id="past-day-tasks" style="padding:0 8px 12px;"></div>
+      <div style="padding:0 16px 14px;">
+        <button onclick="resetPastDay(document.getElementById('past-date-picker').value)" style="width:100%;padding:10px;background:var(--c3l);color:var(--c3);border:1px solid var(--c3);border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;">🗑️ Reset semua centang hari ini (hapus data tanggal ini)</button>
+      </div>
     </div>
     <div class="admin-section" style="margin-top:12px;">
       <div class="admin-section-header">Backup & Restore Config</div>
@@ -1400,7 +1445,39 @@ window.togglePastTask=async function(dateStr, taskId, el){
   showToast(nowDone?'✓ Dicentang':'✗ Dilepas');
 };
 
-// ---- DRAG & DROP ADMIN TASKS ----
+// ---- DARK MODE ----
+function initDarkMode(){
+  const saved=localStorage.getItem('darkMode');
+  if(saved==='1') document.body.classList.add('dark');
+  updateDarkBtn();
+}
+function updateDarkBtn(){
+  const btn=document.getElementById('dark-mode-btn');
+  if(btn) btn.textContent=document.body.classList.contains('dark')?'☀️':'🌙';
+}
+window.toggleDarkMode=function(){
+  document.body.classList.toggle('dark');
+  localStorage.setItem('darkMode',document.body.classList.contains('dark')?'1':'0');
+  updateDarkBtn();
+};
+
+// ---- RESET PAST DAY ----
+window.resetPastDay=async function(dateStr){
+  if(!dateStr){showToast('Pilih tanggal dulu');return;}
+  const label=dateStr===todayKey()?'hari ini':dateStr;
+  if(!confirm('Reset semua centang untuk '+label+'? Data hari itu akan terhapus permanen.'))return;
+  try{
+    const ref=doc(db,'users',userId,'days',dateStr);
+    await deleteDoc(ref);
+    // Update cache
+    const idx=historyCache.findIndex(h=>h.date===dateStr);
+    if(idx>=0)historyCache.splice(idx,1);
+    // If today, also clear todayData
+    if(dateStr===todayKey()){todayData={};_congratsShown=false;renderHome();}
+    loadPastDayAdmin(dateStr);
+    showToast('🗑️ Data '+label+' dihapus');
+  }catch(e){showToast('Gagal hapus: '+e.message);}
+};
 let _dragTask=null;
 let _dragOverInfo=null;
 
@@ -1544,10 +1621,12 @@ onAuthStateChanged(auth,async(user)=>{
     document.getElementById('loading-screen').style.display='none';
     document.getElementById('login-screen').style.display='none';
     document.getElementById('app').style.display='block';
+    initDarkMode();
     renderHome();
     scheduleAlarms();
     startClock();
   } else {
+    initDarkMode();
     document.getElementById('loading-screen').style.display='none';
     document.getElementById('login-screen').style.display='flex';
   }
