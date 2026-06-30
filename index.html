@@ -99,7 +99,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .task-item.required:not(.done) .task-check{border-color:#F5A623;}
 .task-item.required:not(.done) .task-label{font-weight:500;}
 .star-gold{color:#EF9F27;}
-.star-silver{color:#f5a623;}
+.star-silver{color:#4AA3DF;}
 .star-counts{display:flex;gap:8px;}
 .star-pill{display:flex;align-items:center;gap:4px;font-size:14px;font-weight:600;background:rgba(255,255,255,.2);padding:4px 10px;border-radius:16px;}
 
@@ -331,6 +331,41 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .redeem-cost{font-size:13px;font-weight:700;color:var(--c3);white-space:nowrap;}
 .redeem-pin-input{font-size:24px;text-align:center;letter-spacing:10px;width:100%;border:2px solid var(--border2);border-radius:12px;padding:12px;background:var(--bg);color:var(--text);font-family:inherit;outline:none;}
 .redeem-pin-input:focus{border-color:var(--c1);}
+
+/* FOCUS / NOW MODE */
+#focus-overlay{position:fixed;inset:0;background:var(--bg);z-index:550;display:none;overflow-y:auto;}
+#focus-overlay.show{display:block;}
+.focus-inner{max-width:560px;margin:0 auto;width:100%;padding:20px 18px 48px;}
+.focus-top{display:flex;justify-content:flex-end;margin-bottom:4px;}
+.focus-exit{background:var(--card);border:1px solid var(--border2);border-radius:22px;padding:9px 18px;font-size:15px;font-weight:600;color:var(--text);cursor:pointer;font-family:inherit;}
+.focus-clock{font-size:clamp(56px,18vw,86px);font-weight:800;text-align:center;letter-spacing:2px;font-variant-numeric:tabular-nums;font-family:'Courier New',Courier,monospace;line-height:1.05;margin-top:6px;color:var(--c1d);}
+body.dark .focus-clock{color:var(--c1);}
+.focus-date{text-align:center;font-size:16px;color:var(--text2);margin-bottom:6px;}
+.focus-count{text-align:center;font-size:16px;font-weight:600;margin-bottom:22px;min-height:22px;color:var(--c2);}
+.focus-count.urgent{color:var(--c3);}
+.focus-count.locked{color:var(--c3);}
+.focus-period{background:var(--card);border:1px solid var(--border);border-radius:18px;overflow:hidden;box-shadow:0 4px 18px rgba(0,0,0,.07);}
+.focus-period-head{padding:16px 18px;color:#fff;display:flex;align-items:center;gap:12px;font-size:20px;font-weight:700;}
+.focus-task{display:flex;align-items:center;gap:14px;padding:18px;border-bottom:1px solid var(--border);cursor:pointer;font-size:18px;-webkit-tap-highlight-color:transparent;}
+.focus-task:last-child{border-bottom:none;}
+.focus-task:active{background:var(--bg);}
+.focus-task.done .focus-task-label{text-decoration:line-through;color:var(--text3);}
+.focus-check{width:36px;height:36px;border-radius:50%;border:2.5px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:19px;color:#fff;flex-shrink:0;}
+.focus-task-label{flex:1;line-height:1.35;}
+.focus-empty{padding:48px 20px;text-align:center;color:var(--text2);font-size:18px;}
+
+/* PENALTY */
+.penalty-card .penalty-top{display:flex;align-items:center;gap:16px;}
+.penalty-score{font-size:46px;font-weight:800;color:var(--c3);min-width:64px;text-align:center;line-height:1;}
+.penalty-meta{flex:1;min-width:0;}
+.penalty-status{font-size:14px;font-weight:600;margin-top:4px;}
+.penalty-status.good{color:var(--c2);}
+.penalty-status.bad{color:var(--c3);}
+.penalty-next{font-size:12px;color:var(--text3);margin-top:4px;}
+.penalty-log-row{display:flex;align-items:center;gap:10px;font-size:13px;padding:7px 0;border-top:1px solid var(--border);}
+.penalty-log-row span:first-child{flex:1;min-width:0;}
+.penalty-date{font-size:11px;color:var(--text3);white-space:nowrap;}
+.penalty-marks{font-weight:700;color:var(--c3);white-space:nowrap;}
 </style>
 </head>
 <body>
@@ -375,6 +410,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <button class="pin-key text-key" onclick="pinCancel()">Batal</button><button class="pin-key" onclick="pinPress('0')">0</button><button class="pin-key text-key" onclick="pinClear()">⌫</button>
       </div>
       <div class="pin-error" id="pin-error"></div>
+    </div>
+  </div>
+
+  <!-- Focus / Now Mode -->
+  <div id="focus-overlay">
+    <div class="focus-inner">
+      <div class="focus-top"><button class="focus-exit" onclick="exitFocus()">✕ Tutup</button></div>
+      <div class="focus-clock" id="focus-clock">00:00</div>
+      <div class="focus-date" id="focus-date"></div>
+      <div class="focus-count" id="focus-count"></div>
+      <div id="focus-body"></div>
     </div>
   </div>
 
@@ -448,7 +494,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       </div>
       <div class="star-counts">
       <div class="star-pill">⭐ <span id="star-gold-display">0</span></div>
-      <div class="star-pill">🌟 <span id="star-silver-display">0</span></div>
+      <div class="star-pill">💎 <span id="star-silver-display">0</span></div>
+      <button onclick="enterFocus()" id="focus-btn" style="background:rgba(255,255,255,.2);border:none;border-radius:50%;width:32px;height:32px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;" title="Mode Fokus (jam besar)">⏰</button>
       <button onclick="toggleDarkMode()" id="dark-mode-btn" style="background:rgba(255,255,255,.2);border:none;border-radius:50%;width:32px;height:32px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;" title="Mode gelap/terang">🌙</button>
     </div>
     </div>
@@ -472,7 +519,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div class="stat-box"><div class="stat-val" id="s-done">0</div><div class="stat-lbl">tugas selesai</div></div>
         <div class="stat-box"><div class="stat-val" id="s-total">0</div><div class="stat-lbl">total tugas</div></div>
         <div class="stat-box"><div class="stat-val star-gold" id="s-gold">0 ⭐</div><div class="stat-lbl">bintang wajib</div></div>
-        <div class="stat-box"><div class="stat-val star-silver" id="s-silver">0 🌟</div><div class="stat-lbl">bintang bonus</div></div>
+        <div class="stat-box"><div class="stat-val star-silver" id="s-silver">0 💎</div><div class="stat-lbl">permata bonus</div></div>
       </div>
       <div class="streak-box">
         <div class="streak-num" id="s-streak">0</div>
@@ -483,9 +530,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <h2>Total bintang terkumpul</h2>
       <div style="display:flex;justify-content:center;gap:24px;padding:8px 0;">
         <div style="text-align:center;"><div style="font-size:32px;font-weight:700;color:#EF9F27;" id="s-total-gold">0 ⭐</div><div style="font-size:12px;color:var(--text2);margin-top:2px;">Wajib</div></div>
-        <div style="text-align:center;"><div style="font-size:32px;font-weight:700;color:#9E9E9E;" id="s-total-silver">0 🌟</div><div style="font-size:12px;color:var(--text2);margin-top:2px;">Bonus</div></div>
+        <div style="text-align:center;"><div style="font-size:32px;font-weight:700;color:#4AA3DF;" id="s-total-silver">0 💎</div><div style="font-size:12px;color:var(--text2);margin-top:2px;">Bonus</div></div>
       </div>
     </div>
+    <div id="penalty-card-container"></div>
     <div id="weekly-reports-container"></div>
     <div class="card" style="margin-bottom:12px;">
       <h2>Riwayat Harian</h2>
@@ -656,6 +704,11 @@ const DEFAULT_CONFIG = {
     {minXP:1450,icon:'🌟',title:'Bintang Super'},
     {minXP:2000,icon:'👑',title:'Legenda'}
   ],
+  penaltyRules:[
+    {id:'pr1',marks:3,icon:'⚠️',consequence:'Peringatan dari orang tua'},
+    {id:'pr2',marks:5,icon:'⛔',consequence:'Tidak ada waktu bermain hari ini'},
+    {id:'pr3',marks:8,icon:'📵',consequence:'Tidak ada gadget besok'}
+  ],
   periods:[
     {id:'pagi',label:'Pagi - Bangun Tidur',icon:'🌅',alarm:'06:00',color:'#7F77DD',dayType:'all',
       tasks:[{id:1,label:'Bangun & rapikan tempat tidur',pts:2,required:true},{id:2,label:'Cuci muka & gosok gigi',pts:2,required:true},{id:3,label:'Ganti baju',pts:1,required:true},{id:4,label:'Berdoa pagi',pts:2,required:true}]},
@@ -680,10 +733,12 @@ let pinBuffer = '';
 let userId = null;
 let pmSelectedColor = PALETTE[0];
 let pmSelectedIcon = ICONS[0];
-let walletData = { redemptions:[] };
+let walletData = { redemptions:[], penalties:[] };
 let _pendingRedeem = null;
 const REWARD_ICONS = ['🎁','📺','🎮','🍦','🧸','🎡','🍕','🍫','📚','🚲','🎨','⚽','🎬','🛍️','💰','🏊','🎢','🐶'];
 const LEVEL_ICONS = ['🌱','🧭','🦁','⭐','💪','🛡️','🦸','🏆','🌟','👑','🚀','🥇','🔥','💎'];
+const REQ_ICON = '⭐';    // bintang wajib (required)
+const BONUS_ICON = '💎';  // permata bonus (optional/extra)
 
 // ---- UTILS ----
 function todayKey() {
@@ -779,11 +834,13 @@ async function loadFromFirestore(){
   // Seed newer config sections for existing users
   if(!Array.isArray(config.rewards)) config.rewards=JSON.parse(JSON.stringify(DEFAULT_CONFIG.rewards));
   if(!Array.isArray(config.levels)) config.levels=JSON.parse(JSON.stringify(DEFAULT_CONFIG.levels));
+  if(!Array.isArray(config.penaltyRules)) config.penaltyRules=JSON.parse(JSON.stringify(DEFAULT_CONFIG.penaltyRules));
   const todayDoc=await getDoc(doc(db,'users',userId,'days',todayKey()));
   if(todayDoc.exists()) todayData=todayDoc.data();
   const walletDoc=await getDoc(doc(db,'users',userId,'data','wallet'));
   if(walletDoc.exists()) walletData=walletDoc.data();
   if(!Array.isArray(walletData.redemptions)) walletData.redemptions=[];
+  if(!Array.isArray(walletData.penalties)) walletData.penalties=[];
   await loadHistory(0);
 }
 async function saveConfigFS(){
@@ -871,7 +928,7 @@ function renderPeriods(){
       :p.tasks.map(t=>{
         const isReq=t.required!==false;
         const isDone=!!todayData[String(t.id)];
-        const starIcon=isReq?'⭐':'🌟';
+        const starIcon=isReq?REQ_ICON:BONUS_ICON;
         const starClass=isReq?'star-gold':'star-silver';
         const clickable=!locked||isDone;
         return `<div class="task-item ${isDone?'done':''} ${isReq&&!locked?'required':''}" style="${locked&&!isDone?'opacity:.45;':''}${clickable?'':'pointer-events:none;'}" onclick="${clickable?`toggleTask('${t.id}','${p.id}')`:''}" >
@@ -919,7 +976,7 @@ window.toggleTask=function(taskId,periodId){
   if(!t)return;
   const key=String(t.id);
   const isReq=t.required!==false;
-  const starIcon=isReq?'⭐':'🌟';
+  const starIcon=isReq?REQ_ICON:BONUS_ICON;
   if(todayData[key]){delete todayData[key];showToast('-'+t.pts+' '+starIcon+' dibatalkan');}
   else{todayData[key]=t.pts;showToast('+'+t.pts+' '+starIcon+'!');playDing();}
   saveTodayFS();
@@ -927,6 +984,7 @@ window.toggleTask=function(taskId,periodId){
   if(idx>=0)historyCache[idx].data={...todayData};
   else historyCache.unshift({date:todayKey(),data:{...todayData}});
   renderHome();
+  if(document.getElementById('focus-overlay').classList.contains('show'))renderFocus();
   const required=todayTasks().filter(t2=>t2.required!==false);
   if(required.length>0&&required.every(t2=>todayData[String(t2.id)]))
     setTimeout(()=>showCongrats(),400);
@@ -940,10 +998,11 @@ function renderSummary(){
   document.getElementById('s-done').textContent=done;
   document.getElementById('s-total').textContent=all.length;
   document.getElementById('s-gold').textContent=todayGoldStars()+' ⭐';
-  document.getElementById('s-silver').textContent=todaySilverStars()+' 🌟';
+  document.getElementById('s-silver').textContent=todaySilverStars()+' 💎';
   document.getElementById('s-total-gold').textContent=totalGoldAll()+' ⭐';
-  document.getElementById('s-total-silver').textContent=totalSilverAll()+' 🌟';
+  document.getElementById('s-total-silver').textContent=totalSilverAll()+' 💎';
   document.getElementById('s-streak').textContent=calcStreak();
+  renderPenaltyCard();
   renderWeeklyReports();
   renderHistory();
 }
@@ -993,7 +1052,7 @@ function renderWeeklyReports(){
     return `<div class="week-card">
       <div class="week-header" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
         <h3>${isCurrentWeek?'Minggu Ini':'Minggu '+formatDateShort(start)+' – '+formatDateShort(end)}</h3>
-        <span style="font-size:13px;font-weight:700;display:flex;gap:8px;"><span style="color:#EF9F27;">${stars}⭐</span><span style="color:#9E9E9E;">${allStars-stars}🌟</span></span>
+        <span style="font-size:13px;font-weight:700;display:flex;gap:8px;"><span style="color:#EF9F27;">${stars}⭐</span><span style="color:#4AA3DF;">${allStars-stars}💎</span></span>
       </div>
       <div class="week-body" style="display:${isCurrentWeek?'block':'none'}">
         ${barsHtml}
@@ -1023,7 +1082,7 @@ function renderHistory(){
       const taskRows=p.tasks.map(t=>{
         const isDone=!!h.data[String(t.id)];
         const isReq=t.required!==false;
-        const starIcon=isReq?'⭐':'🌟';
+        const starIcon=isReq?REQ_ICON:BONUS_ICON;
         return `<div class="hist-task-row">
           <div class="hist-task-dot ${isDone?'done':'miss'}"></div>
           <span class="hist-task-name ${isDone?'done':''}">${t.label}</span>
@@ -1063,7 +1122,7 @@ window.setHistFilter=async function(n,btn){
   if(n===0)await loadHistory(0);
   renderHistory();
   document.getElementById('s-total-gold').textContent=totalGoldAll()+' ⭐';
-  document.getElementById('s-total-silver').textContent=totalSilverAll()+' 🌟';
+  document.getElementById('s-total-silver').textContent=totalSilverAll()+' 💎';
 };
 
 function calcStreak(){
@@ -1100,7 +1159,7 @@ function buildAdminTaskList(p, pi){
     const reqStyle=req?'background:#FFF3DC;border:1px solid #EF9F27;color:#7a5c00;':'background:#f0f0f0;border:1px solid #ccc;color:#666;';
     return '<div class="admin-task-row" data-pi="'+pi+'" data-ti="'+ti+'">'
       +'<span class="drag-handle" title="Geser untuk pindahkan">⠿</span>'
-      +'<span style="font-size:16px;margin-right:2px;" title="'+(req?'Wajib':'Bonus')+'">'+(req?'⭐':'🌟')+'</span>'
+      +'<span style="font-size:16px;margin-right:2px;" title="'+(req?'Wajib':'Bonus')+'">'+(req?REQ_ICON:BONUS_ICON)+'</span>'
       +'<input type="text" value="'+t.label+'" onchange="config.periods['+pi+'].tasks['+ti+'].label=this.value" style="flex:1;font-size:14px;border:none;outline:none;background:transparent;color:var(--text);font-family:inherit;">'
       +'<span style="font-size:12px;color:var(--text3);">pts:</span>'
       +'<input type="number" class="pts-input" value="'+t.pts+'" min="1" max="10" onchange="config.periods['+pi+'].tasks['+ti+'].pts=parseInt(this.value)||1">'
@@ -1197,6 +1256,38 @@ function renderAdmin(){
           </div>`).join('')}
       </div>
       <button class="add-task-btn" onclick="addLevel()">＋ Tambah Level</button>
+    </div>
+    <div class="admin-section">
+      <div class="admin-section-header">⚠️ Penalti</div>
+      <div style="padding:10px 16px 4px;font-size:12px;color:var(--text3);">Poin penalti TERPISAH dari bintang &amp; hadiah. Berikan saat anak melanggar.</div>
+      <div style="padding:8px 16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <input type="text" id="penalty-reason" placeholder="Alasan (mis. tidak mau mandi)" style="flex:1;min-width:140px;font-size:14px;border:1px solid var(--border2);border-radius:8px;padding:8px 10px;background:var(--bg);color:var(--text);font-family:inherit;">
+        <input type="number" id="penalty-marks" value="1" min="1" max="10" class="pts-input">
+        <button onclick="addPenalty()" style="background:var(--c3);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;">Beri</button>
+      </div>
+      <div style="padding:0 16px 8px;">
+        ${(walletData.penalties||[]).slice().sort((a,b)=>(b.ts||0)-(a.ts||0)).slice(0,8).map(p=>`<div class="admin-row" style="padding:8px 0;border-bottom:1px solid var(--border);"><span style="flex:1;font-size:13px;min-width:0;">${p.reason||'Penalti'} <span style="color:var(--text3);">· ${formatDateShort(new Date(p.ts||Date.now()))}</span></span><span style="color:var(--c3);font-weight:700;margin:0 8px;">+${p.marks}</span><button class="del-btn" onclick="forgivePenalty('${p.id}')" title="Maafkan / hapus">✕</button></div>`).join('')||'<div style="font-size:12px;color:var(--text3);padding:6px 0;">Belum ada penalti</div>'}
+      </div>
+      ${(walletData.penalties||[]).length?`<div style="padding:0 16px 14px;"><button onclick="clearPenalties()" style="width:100%;padding:10px;background:var(--c2l);color:var(--c2);border:1px solid var(--c2);border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">✓ Bersihkan semua penalti (anak sudah memperbaiki diri)</button></div>`:''}
+    </div>
+    <div class="admin-section">
+      <div class="admin-section-header">Konsekuensi Penalti</div>
+      <div style="padding:10px 16px 4px;font-size:12px;color:var(--text3);">Akibat yang berlaku saat poin penalti mencapai jumlah tertentu.</div>
+      <div id="penalty-rule-list">
+        ${penaltyRulesSorted().map(r=>{
+          const idx=(config.penaltyRules||[]).findIndex(x=>x.id===r.id);
+          return `<div class="ach-admin-item">
+            <select style="font-size:20px;border:1px solid var(--border2);border-radius:8px;padding:2px 4px;background:var(--bg);cursor:pointer;font-family:inherit;" onchange="config.penaltyRules[${idx}].icon=this.value" title="Pilih ikon">
+              ${['⚠️','⛔','🚫','😟','📵','🛑','❌','💤','🙅'].map(ic=>`<option value="${ic}" ${r.icon===ic?'selected':''}>${ic}</option>`).join('')}
+            </select>
+            <span style="font-size:12px;color:var(--text3);">≥</span>
+            <input type="number" class="ach-pts-input" value="${r.marks}" min="1" onchange="config.penaltyRules[${idx}].marks=parseInt(this.value)||1" title="Poin penalti">
+            <input type="text" value="${r.consequence}" onchange="config.penaltyRules[${idx}].consequence=this.value" style="flex:1;font-size:13px;border:none;outline:none;background:transparent;color:var(--text);font-family:inherit;">
+            <button class="del-btn" onclick="delPenaltyRule(${idx})">✕</button>
+          </div>`;
+        }).join('')}
+      </div>
+      <button class="add-task-btn" onclick="addPenaltyRule()">＋ Tambah Konsekuensi</button>
     </div>`;
 
   config.periods.forEach((p,pi)=>{
@@ -1400,6 +1491,7 @@ window.importConfig=async function(event){
     config=imported; window.config=config;
     if(!Array.isArray(config.rewards)) config.rewards=JSON.parse(JSON.stringify(DEFAULT_CONFIG.rewards));
     if(!Array.isArray(config.levels)) config.levels=JSON.parse(JSON.stringify(DEFAULT_CONFIG.levels));
+    if(!Array.isArray(config.penaltyRules)) config.penaltyRules=JSON.parse(JSON.stringify(DEFAULT_CONFIG.penaltyRules));
     await saveConfigFS();
     showToast('✓ Config berhasil diimport!');
     renderAdmin();
@@ -1560,7 +1652,7 @@ window.loadPastDayAdmin=function(dateStr){
       const req=t.required!==false;
       return '<div class="admin-task-row" style="cursor:pointer;" onclick="togglePastTask(\''+dateStr+'\',\''+t.id+'\',this)">'
         +'<div class="task-check" style="width:22px;height:22px;border-radius:6px;border:2px solid '+(isDone?'var(--c1)':'var(--border2)')+';background:'+(isDone?'var(--c1)':'transparent')+';display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">'+(isDone?'✓':'')+'</div>'
-        +'<span style="flex:1;font-size:14px;color:var(--text);">'+(req?'⭐':'🌟')+' '+t.label+'</span>'
+        +'<span style="flex:1;font-size:14px;color:var(--text);">'+(req?REQ_ICON:BONUS_ICON)+' '+t.label+'</span>'
         +'<span style="font-size:12px;color:var(--text3);">'+t.pts+'pts</span>'
         +'</div>';
     }).join('');
@@ -1760,6 +1852,83 @@ function initAdminDrag(){
   document.addEventListener('mouseup',e=>{if(_draggingEl)pointerDragEnd(e);});
 }
 
+// ---- FOCUS / NOW MODE ----
+function byAlarmAsc(a,b){
+  const[ah,am]=a.alarm.split(':').map(Number);
+  const[bh,bm]=b.alarm.split(':').map(Number);
+  return(ah*60+am)-(bh*60+bm);
+}
+function currentFocusPeriod(){
+  const now=new Date();
+  const dt=getDayType(now);
+  const visible=config.periods.filter(p=>p.dayType==='all'||p.dayType===dt);
+  if(!visible.length) return null;
+  const withAlarm=visible.filter(p=>p.alarm).slice().sort(byAlarmAsc);
+  if(!withAlarm.length) return visible.find(p=>p.tasks.some(t=>!todayData[String(t.id)]))||visible[0];
+  const upcoming=withAlarm.find(p=>!isPastDeadline(p));
+  return upcoming||withAlarm[withAlarm.length-1];
+}
+window.enterFocus=function(){
+  document.getElementById('focus-overlay').classList.add('show');
+  localStorage.setItem('focusMode','1');
+  renderFocus();
+  clearInterval(window._focusTimer);
+  window._focusTimer=setInterval(renderFocus,1000);
+};
+window.exitFocus=function(){
+  document.getElementById('focus-overlay').classList.remove('show');
+  localStorage.setItem('focusMode','0');
+  clearInterval(window._focusTimer);
+  renderHome();
+};
+function renderFocus(){
+  const ov=document.getElementById('focus-overlay');
+  if(!ov.classList.contains('show'))return;
+  const now=new Date();
+  document.getElementById('focus-clock').textContent=
+    String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+  document.getElementById('focus-date').textContent=formatDate(now);
+  const p=currentFocusPeriod();
+  const body=document.getElementById('focus-body');
+  const countEl=document.getElementById('focus-count');
+  if(!p){
+    countEl.textContent='';countEl.className='focus-count';
+    body.innerHTML='<div class="focus-empty"><div style="font-size:56px;">🎉</div><div>Tidak ada tugas untuk saat ini</div></div>';
+    return;
+  }
+  if(p.alarm&&!isPastDeadline(p)){
+    const[dh,dm]=p.alarm.split(':').map(Number);
+    const target=new Date(now);target.setHours(dh,dm,0,0);
+    const rs=Math.max(0,Math.floor((target-now)/1000));
+    const ch=Math.floor(rs/3600),cm=Math.floor((rs%3600)/60),cs=rs%60;
+    const str=(ch>0?ch+'j ':'')+cm+'m '+String(cs).padStart(2,'0')+'d';
+    countEl.textContent='⏰ '+str+' lagi sebelum jam '+p.alarm;
+    countEl.className='focus-count'+(rs<300?' urgent':'');
+  } else if(p.alarm&&isPastDeadline(p)){
+    countEl.textContent=isLocked(p)?('🔒 Deadline '+p.alarm+' sudah lewat'):('Deadline '+p.alarm+' (dibuka admin)');
+    countEl.className='focus-count locked';
+  } else { countEl.textContent='';countEl.className='focus-count'; }
+  const color=p.color||PALETTE[0];
+  const locked=isLocked(p);
+  const tasksHtml=p.tasks.length
+    ? p.tasks.map(t=>{
+        const isDone=!!todayData[String(t.id)];
+        const isReq=t.required!==false;
+        const clickable=!locked||isDone;
+        return `<div class="focus-task ${isDone?'done':''}" ${clickable?`onclick="toggleTask('${t.id}','${p.id}')"`:''} style="${clickable?'':'opacity:.5;pointer-events:none;'}">
+          <div class="focus-check" style="${isDone?'background:'+color+';border-color:'+color:''}">${isDone?'✓':locked?'🔒':''}</div>
+          <span class="focus-task-label">${t.label}</span>
+          <span style="font-size:16px;">${isReq?REQ_ICON:BONUS_ICON}</span>
+        </div>`;
+      }).join('')
+    : '<div class="focus-empty">Belum ada tugas di periode ini</div>';
+  const doneN=p.tasks.filter(t=>todayData[String(t.id)]).length;
+  body.innerHTML=`<div class="focus-period">
+    <div class="focus-period-head" style="background:${color}"><span>${p.icon}</span><span style="flex:1;">${p.label}</span><span style="font-size:14px;opacity:.92;">${doneN}/${p.tasks.length}</span></div>
+    ${tasksHtml}
+  </div>`;
+}
+
 // ---- LEVELS & REWARDS ----
 function levelLadder(){
   const L=(config.levels&&config.levels.length?config.levels:DEFAULT_CONFIG.levels);
@@ -1888,6 +2057,76 @@ window.refundRedeem=async function(id){
   renderRewards();
 };
 
+// ---- PENALTY (separate score, does not touch stars/coins) ----
+function penaltyTotal(){ return (walletData.penalties||[]).reduce((a,p)=>a+(p.marks||0),0); }
+function penaltyRulesSorted(){ return (config.penaltyRules||[]).slice().sort((a,b)=>(a.marks||0)-(b.marks||0)); }
+function activeConsequence(){
+  const t=penaltyTotal();
+  const hit=penaltyRulesSorted().filter(r=>t>=r.marks);
+  return hit.length?hit[hit.length-1]:null;
+}
+function nextConsequence(){
+  const t=penaltyTotal();
+  return penaltyRulesSorted().find(r=>t<r.marks)||null;
+}
+function penaltyCardHTML(){
+  const t=penaltyTotal();
+  const active=activeConsequence();
+  const next=nextConsequence();
+  const recent=(walletData.penalties||[]).slice().sort((a,b)=>(b.ts||0)-(a.ts||0)).slice(0,5);
+  const logHtml=recent.length
+    ? recent.map(p=>`<div class="penalty-log-row"><span>${p.reason||'Penalti'}</span><span class="penalty-date">${formatDateShort(new Date(p.ts||Date.now()))}</span><span class="penalty-marks">+${p.marks}</span></div>`).join('')
+    : '<div style="color:var(--text3);font-size:13px;padding:8px 0;">Belum ada catatan penalti 🎉</div>';
+  const statusLine = t===0
+    ? '<div class="penalty-status good">Bersih, tidak ada penalti 👍</div>'
+    : active ? `<div class="penalty-status bad">${active.icon} ${active.consequence}</div>` : '';
+  const nextLine = next ? `<div class="penalty-next">${next.marks-t} poin lagi → ${next.icon} ${next.consequence}</div>` : '';
+  return `<div class="card penalty-card">
+    <h2>⚠️ Catatan Penalti</h2>
+    <div class="penalty-top">
+      <div class="penalty-score">${t}</div>
+      <div class="penalty-meta">
+        <div style="font-size:13px;color:var(--text2);">poin penalti saat ini</div>
+        ${statusLine}${nextLine}
+      </div>
+    </div>
+    <div style="margin-top:10px;">${logHtml}</div>
+  </div>`;
+}
+function renderPenaltyCard(){ const el=document.getElementById('penalty-card-container'); if(el) el.innerHTML=penaltyCardHTML(); }
+
+window.addPenalty=async function(){
+  const reasonEl=document.getElementById('penalty-reason');
+  const marksEl=document.getElementById('penalty-marks');
+  const reason=(reasonEl?reasonEl.value:'').trim();
+  const marks=Math.max(1,parseInt(marksEl?marksEl.value:'1')||1);
+  walletData.penalties=walletData.penalties||[];
+  walletData.penalties.push({id:'pn'+Date.now(),reason:reason||'Penalti',marks,date:todayKey(),ts:Date.now()});
+  await saveWalletFS();
+  showToast('⚠️ Penalti +'+marks+' dicatat');
+  renderAdmin();
+};
+window.forgivePenalty=async function(id){
+  walletData.penalties=(walletData.penalties||[]).filter(p=>String(p.id)!==String(id));
+  await saveWalletFS();
+  showToast('Penalti dihapus');
+  renderAdmin();
+};
+window.clearPenalties=async function(){
+  if(!confirm('Bersihkan SEMUA poin penalti? (mis. anak sudah memperbaiki diri)'))return;
+  walletData.penalties=[];
+  await saveWalletFS();
+  showToast('✓ Semua penalti dibersihkan');
+  renderAdmin();
+};
+window.addPenaltyRule=function(){
+  if(!config.penaltyRules)config.penaltyRules=[];
+  const maxM=config.penaltyRules.reduce((m,r)=>Math.max(m,r.marks||0),0);
+  config.penaltyRules.push({id:'pr'+Date.now(),marks:maxM+2,icon:'⚠️',consequence:'Konsekuensi baru'});
+  renderAdmin();
+};
+window.delPenaltyRule=function(ri){ config.penaltyRules.splice(ri,1); renderAdmin(); };
+
 // ---- INIT ----
 onAuthStateChanged(auth,async(user)=>{
   if(user){
@@ -1900,6 +2139,7 @@ onAuthStateChanged(auth,async(user)=>{
     renderHome();
     scheduleAlarms();
     startClock();
+    if(localStorage.getItem('focusMode')==='1') enterFocus();
   } else {
     initDarkMode();
     document.getElementById('loading-screen').style.display='none';
