@@ -403,6 +403,12 @@ textarea.text-input{font-family:inherit;border:1px solid var(--border2);border-r
 .badge-title{font-size:11px;font-weight:600;color:var(--text);line-height:1.2;}
 .streak-chip{font-size:11px;font-weight:700;color:#D85A30;background:#FAECE7;padding:1px 7px;border-radius:9px;margin-right:6px;white-space:nowrap;}
 body.dark .streak-chip{background:#2e1a12;color:#e8795a;}
+
+/* SAVING GOAL */
+.goal-bar-bg{height:16px;background:var(--c1l);border-radius:8px;overflow:hidden;}
+.goal-bar-fill{height:16px;background:linear-gradient(90deg,var(--c1),var(--star));border-radius:8px;transition:width .5s ease;}
+.goal-toggle{margin-top:6px;width:100%;background:none;border:none;color:var(--text3);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;padding:3px;border-radius:6px;}
+.goal-toggle:active{background:var(--bg);}
 </style>
 </head>
 <body>
@@ -803,6 +809,10 @@ const DEFAULT_CONFIG = {
     {id:'pr3',marks:8,icon:'📵',consequence:'Tidak ada gadget besok'}
   ],
   penaltyCoinCost:15,
+  autoPenalty:false,
+  autoPenaltyMarks:1,
+  penaltyDecay:false,
+  penaltyDecayAmount:2,
   journalReward:2,
   quests:[
     {id:'q1',icon:'🧹',label:'Bantu bersihkan meja makan',reward:5,type:'daily'},
@@ -942,6 +952,10 @@ async function loadFromFirestore(){
   if(!Array.isArray(config.penaltyRules)) config.penaltyRules=JSON.parse(JSON.stringify(DEFAULT_CONFIG.penaltyRules));
   if(typeof config.penaltyCoinCost!=='number') config.penaltyCoinCost=DEFAULT_CONFIG.penaltyCoinCost;
   if(typeof config.journalReward!=='number') config.journalReward=DEFAULT_CONFIG.journalReward;
+  if(typeof config.autoPenalty!=='boolean') config.autoPenalty=DEFAULT_CONFIG.autoPenalty;
+  if(typeof config.autoPenaltyMarks!=='number') config.autoPenaltyMarks=DEFAULT_CONFIG.autoPenaltyMarks;
+  if(typeof config.penaltyDecay!=='boolean') config.penaltyDecay=DEFAULT_CONFIG.penaltyDecay;
+  if(typeof config.penaltyDecayAmount!=='number') config.penaltyDecayAmount=DEFAULT_CONFIG.penaltyDecayAmount;
   if(!Array.isArray(config.quests)) config.quests=JSON.parse(JSON.stringify(DEFAULT_CONFIG.quests));
   const todayDoc=await getDoc(doc(db,'users',userId,'days',todayKey()));
   if(todayDoc.exists()) todayData=todayDoc.data();
@@ -1365,14 +1379,19 @@ function renderAdmin(){
       <div style="padding:10px 16px 4px;font-size:12px;color:var(--text3);">Hadiah yang bisa ditukar anak dengan bintang. Penukaran perlu PIN orang tua.</div>
       <div id="reward-admin-list">
         ${(config.rewards||[]).map((r,ri)=>`
-          <div class="ach-admin-item">
+          <div class="ach-admin-item" style="flex-wrap:wrap;">
             <select style="font-size:20px;border:1px solid var(--border2);border-radius:8px;padding:2px 4px;background:var(--bg);cursor:pointer;font-family:inherit;" onchange="config.rewards[${ri}].icon=this.value" title="Pilih ikon">
               ${REWARD_ICONS.map(ic=>`<option value="${ic}" ${r.icon===ic?'selected':''}>${ic}</option>`).join('')}
             </select>
-            <input type="text" value="${r.label}" onchange="config.rewards[${ri}].label=this.value" style="flex:1;font-size:13px;border:none;outline:none;background:transparent;color:var(--text);font-family:inherit;">
+            <input type="text" value="${r.label}" onchange="config.rewards[${ri}].label=this.value" style="flex:1;min-width:90px;font-size:13px;border:none;outline:none;background:transparent;color:var(--text);font-family:inherit;">
             <input type="number" class="ach-pts-input" value="${r.cost}" min="1" onchange="config.rewards[${ri}].cost=parseInt(this.value)||1" title="Harga bintang">
             <span style="font-size:12px;color:var(--text3);">⭐</span>
             <button class="del-btn" onclick="delReward(${ri})">✕</button>
+            <div style="flex-basis:100%;display:flex;align-items:center;gap:8px;padding-left:2px;">
+              <span style="font-size:11px;color:var(--text3);">Stok</span>
+              <input type="number" class="ach-pts-input" style="width:54px;" placeholder="∞" value="${r.stock!=null?r.stock:''}" min="0" onchange="config.rewards[${ri}].stock=this.value===''?null:(parseInt(this.value)||0)" title="Kosong = tak terbatas">
+              <button onclick="toggleRewardWeekly(${ri})" title="Batasi 1× per minggu" style="border:1px solid ${r.weekly?'var(--c1)':'var(--border2)'};background:${r.weekly?'var(--c1l)':'var(--bg)'};color:${r.weekly?'var(--c1)':'var(--text3)'};border-radius:8px;font-size:11px;padding:4px 8px;cursor:pointer;font-family:inherit;font-weight:600;">1× / minggu</button>
+            </div>
           </div>`).join('')}
       </div>
       <button class="add-task-btn" onclick="addReward()">＋ Tambah Hadiah</button>
@@ -1436,6 +1455,16 @@ function renderAdmin(){
       <div class="admin-section-header">⚠️ Penalti</div>
       <div style="padding:10px 16px 4px;font-size:12px;color:var(--text3);">Poin penalti TERPISAH dari bintang &amp; hadiah. Berikan saat anak melanggar.</div>
       <div class="admin-row"><label>Harga tebus penalti (⭐ / poin)</label><input type="number" min="1" value="${config.penaltyCoinCost||15}" onchange="config.penaltyCoinCost=parseInt(this.value)||1" class="ach-pts-input"></div>
+      <div class="admin-row">
+        <div><div style="font-size:14px;font-weight:600;">Penalti otomatis</div><div style="font-size:11px;color:var(--text3);">Beri penalti jika tugas wajib terlewat deadline</div></div>
+        <label class="toggle"><input type="checkbox" ${config.autoPenalty?'checked':''} onchange="setConfigFlag('autoPenalty',this.checked)"><span class="toggle-slider"></span></label>
+      </div>
+      <div class="admin-row"><label>Poin penalti otomatis / tugas</label><input type="number" min="1" value="${config.autoPenaltyMarks||1}" onchange="config.autoPenaltyMarks=parseInt(this.value)||1" class="ach-pts-input"></div>
+      <div class="admin-row">
+        <div><div style="font-size:14px;font-weight:600;">Pengurangan mingguan</div><div style="font-size:11px;color:var(--text3);">Kurangi poin penalti tiap awal minggu</div></div>
+        <label class="toggle"><input type="checkbox" ${config.penaltyDecay?'checked':''} onchange="setConfigFlag('penaltyDecay',this.checked)"><span class="toggle-slider"></span></label>
+      </div>
+      <div class="admin-row"><label>Pengurangan per minggu (poin)</label><input type="number" min="1" value="${config.penaltyDecayAmount||2}" onchange="config.penaltyDecayAmount=parseInt(this.value)||1" class="ach-pts-input"></div>
       <div style="padding:8px 16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
         <input type="text" id="penalty-reason" placeholder="Alasan (mis. tidak mau mandi)" style="flex:1;min-width:140px;font-size:14px;border:1px solid var(--border2);border-radius:8px;padding:8px 10px;background:var(--bg);color:var(--text);font-family:inherit;">
         <input type="number" id="penalty-marks" value="1" min="1" max="10" class="pts-input">
@@ -1590,6 +1619,7 @@ window.delReward=function(ri){
   if(!confirm('Hapus hadiah ini?'))return;
   config.rewards.splice(ri,1);renderAdmin();
 };
+window.toggleRewardWeekly=function(ri){ config.rewards[ri].weekly=!config.rewards[ri].weekly; renderAdmin(); };
 window.addReward=function(){
   if(!config.rewards)config.rewards=[];
   config.rewards.push({id:'r'+Date.now(),icon:'🎁',label:'Hadiah Baru',cost:50});
@@ -1670,6 +1700,10 @@ window.importConfig=async function(event){
     if(!Array.isArray(config.penaltyRules)) config.penaltyRules=JSON.parse(JSON.stringify(DEFAULT_CONFIG.penaltyRules));
     if(typeof config.penaltyCoinCost!=='number') config.penaltyCoinCost=DEFAULT_CONFIG.penaltyCoinCost;
     if(typeof config.journalReward!=='number') config.journalReward=DEFAULT_CONFIG.journalReward;
+    if(typeof config.autoPenalty!=='boolean') config.autoPenalty=DEFAULT_CONFIG.autoPenalty;
+    if(typeof config.autoPenaltyMarks!=='number') config.autoPenaltyMarks=DEFAULT_CONFIG.autoPenaltyMarks;
+    if(typeof config.penaltyDecay!=='boolean') config.penaltyDecay=DEFAULT_CONFIG.penaltyDecay;
+    if(typeof config.penaltyDecayAmount!=='number') config.penaltyDecayAmount=DEFAULT_CONFIG.penaltyDecayAmount;
     if(!Array.isArray(config.quests)) config.quests=JSON.parse(JSON.stringify(DEFAULT_CONFIG.quests));
     await saveConfigFS();
     showToast('✓ Config berhasil diimport!');
@@ -1741,6 +1775,7 @@ function scheduleAlarms(){
   // Re-render home every minute so deadline locks kick in automatically
   clearInterval(window._deadlineTimer);
   window._deadlineTimer=setInterval(()=>{
+    runAutoPenalties();
     if(document.getElementById('screen-home').classList.contains('active')) renderHome();
   },60000);
 }
@@ -2130,6 +2165,13 @@ function bonusCredits(){ return (walletData.credits||[]).reduce((a,c)=>a+(c.amou
 function todayCreditsTotal(){ return (walletData.credits||[]).filter(c=>c.date===todayKey()).reduce((a,c)=>a+(c.amount||0),0); }
 function lifetimeEarned(){ return totalStarsAll()+bonusCredits(); }
 function currentBalance(){ return Math.max(0, lifetimeEarned()-redemptionsTotal()); }
+function redeemedCount(rewardId){ return (walletData.redemptions||[]).filter(r=>r.rewardId===rewardId).length; }
+function rewardSoldOut(r){ return r.stock!=null && redeemedCount(r.id)>=r.stock; }
+function redeemedThisWeek(rewardId){
+  const cw=getWeekStart(new Date());
+  return (walletData.redemptions||[]).some(r=>r.rewardId===rewardId && getWeekStart(new Date((r.date||todayKey())+'T00:00:00'))===cw);
+}
+function rewardUnavailable(r){ return rewardSoldOut(r) || (r.weekly && redeemedThisWeek(r.id)); }
 
 function levelCardHTML(){
   const L=getLevelInfo();
@@ -2157,17 +2199,33 @@ function renderRewards(){
   if(!cont)return;
   const bal=currentBalance();
   const rewards=config.rewards||[];
+  const goalId=walletData.goalRewardId;
   const grid=rewards.length
     ? rewards.map(r=>{
-        const afford=bal>=r.cost;
+        const soldOut=rewardSoldOut(r);
+        const weeklyUsed=r.weekly&&redeemedThisWeek(r.id);
+        const unavail=soldOut||weeklyUsed;
+        const afford=bal>=r.cost&&!unavail;
+        const stockLine=r.stock!=null?`<div style="font-size:11px;color:var(--text3);">sisa ${Math.max(0,r.stock-redeemedCount(r.id))}</div>`:'';
+        const weeklyLine=r.weekly?`<div style="font-size:11px;color:var(--c1);">1× / minggu</div>`:'';
+        const btnLabel=soldOut?'Stok habis':weeklyUsed?'Minggu ini ✓':(afford?'Tukar':'Belum cukup');
+        const isGoal=goalId===r.id;
         return `<div class="reward-card">
           <div class="reward-ic">${r.icon||'🎁'}</div>
           <div class="reward-name">${r.label}</div>
           <div class="reward-cost">${r.cost} ⭐</div>
-          <button class="reward-btn" ${afford?'':'disabled'} onclick="redeemReward('${r.id}')">${afford?'Tukar':'Belum cukup'}</button>
+          ${stockLine}${weeklyLine}
+          <button class="reward-btn" ${afford?'':'disabled'} onclick="redeemReward('${r.id}')">${btnLabel}</button>
+          <button class="goal-toggle" onclick="${isGoal?`clearGoal()`:`setGoal('${r.id}')`}">${isGoal?'★ Targetku':'☆ Jadikan target'}</button>
         </div>`;
       }).join('')
     : '<div class="empty-period">Belum ada hadiah. Tambahkan lewat menu Admin.</div>';
+  const goalReward=goalId?rewards.find(r=>r.id===goalId):null;
+  const goalCard=goalReward?`<div class="card goal-card">
+    <h2 style="margin-bottom:10px;">🎯 Targetku: ${goalReward.icon||'🎁'} ${goalReward.label}</h2>
+    <div class="goal-bar-bg"><div class="goal-bar-fill" style="width:${Math.min(100,Math.round(bal/goalReward.cost*100))}%"></div></div>
+    <div style="font-size:13px;color:var(--text2);margin-top:6px;">${bal} / ${goalReward.cost} ⭐ ${bal>=goalReward.cost?'— sudah cukup! 🎉':''}</div>
+  </div>`:'';
   const reds=(walletData.redemptions||[]).slice().sort((a,b)=>(b.ts||0)-(a.ts||0));
   const histHtml=reds.length
     ? reds.map(r=>{
@@ -2194,6 +2252,7 @@ function renderRewards(){
       <div class="balance-num">${bal} ⭐</div>
       <div class="balance-lbl">bintang bisa kamu tukar dengan hadiah</div>
     </div>
+    ${goalCard}
     <div class="card"><h2>🎁 Toko Hadiah</h2><div class="reward-grid">${grid}</div></div>
     <div class="card"><h2>✨ Permintaan Hadiahku</h2>${wishesHtml}
       <button onclick="openWishModal()" style="width:100%;margin-top:10px;padding:11px;background:var(--bg);color:var(--c1);border:1.5px dashed var(--c1);border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;">＋ Minta Hadiah Baru</button>
@@ -2201,9 +2260,13 @@ function renderRewards(){
     <div class="card" style="margin-bottom:12px;"><h2>Riwayat Penukaran</h2>${histHtml}</div>`;
 }
 
+window.setGoal=async function(id){ walletData.goalRewardId=id; await saveWalletFS(); showToast('🎯 Target ditetapkan!'); renderRewards(); };
+window.clearGoal=async function(){ walletData.goalRewardId=null; await saveWalletFS(); renderRewards(); };
+window.setConfigFlag=async function(key,val){ config[key]=val; await saveConfigFS(); };
 window.redeemReward=function(id){
   const r=(config.rewards||[]).find(x=>String(x.id)===String(id));
   if(!r)return;
+  if(rewardUnavailable(r)){showToast(rewardSoldOut(r)?'Stok habis':'Sudah ditukar minggu ini');return;}
   if(currentBalance()<r.cost){showToast('Bintang belum cukup');return;}
   _pendingRedeem=r;
   document.getElementById('redeem-info').innerHTML=
@@ -2226,6 +2289,7 @@ window.confirmRedeem=async function(){
   const r=_pendingRedeem;
   const pin=document.getElementById('redeem-pin').value.trim();
   if(pin!==config.pin){document.getElementById('redeem-error').textContent='PIN salah';return;}
+  if(rewardUnavailable(r)){document.getElementById('redeem-error').textContent=rewardSoldOut(r)?'Stok habis':'Sudah ditukar minggu ini';return;}
   if(currentBalance()<r.cost){document.getElementById('redeem-error').textContent='Bintang tidak cukup';return;}
   walletData.redemptions=walletData.redemptions||[];
   walletData.redemptions.push({id:'rd'+Date.now(),rewardId:r.id,label:r.label,icon:r.icon||'🎁',cost:r.cost,date:todayKey(),ts:Date.now()});
@@ -2331,6 +2395,35 @@ function reducePenaltyMarks(n){
     else{p.marks-=rem;rem=0;}
   }
   walletData.penalties=(walletData.penalties||[]).filter(p=>p.marks>0);
+}
+function runAutoPenalties(){
+  if(!config.autoPenalty)return;
+  const marks=config.autoPenaltyMarks||1;
+  const today=todayKey();
+  const dt=getDayType(new Date());
+  let added=false;
+  config.periods.forEach(p=>{
+    if(!(p.dayType==='all'||p.dayType===dt))return;
+    if(!isLocked(p))return; // only after deadline passes and not unlocked by admin
+    p.tasks.forEach(t=>{
+      if(t.required===false)return;
+      if(todayData[String(t.id)])return;
+      const exists=(walletData.penalties||[]).some(x=>x.auto&&String(x.taskId)===String(t.id)&&x.date===today);
+      if(exists)return;
+      walletData.penalties=walletData.penalties||[];
+      walletData.penalties.push({id:'pn'+Date.now()+'_'+t.id,reason:'Terlewat: '+t.label,marks,date:today,ts:Date.now(),auto:true,taskId:t.id});
+      added=true;
+    });
+  });
+  if(added){ saveWalletFS(); showToast('⚠️ Penalti otomatis: ada tugas wajib terlewat'); }
+}
+function runPenaltyDecay(){
+  if(!config.penaltyDecay)return;
+  const cw=getWeekStart(new Date());
+  if(walletData.lastDecayWeek===cw)return;
+  if(walletData.lastDecayWeek && penaltyTotal()>0){ reducePenaltyMarks(config.penaltyDecayAmount||2); }
+  walletData.lastDecayWeek=cw;
+  saveWalletFS();
 }
 window.openPenaltyRedeem=function(){
   const t=penaltyTotal();
@@ -2656,6 +2749,8 @@ onAuthStateChanged(auth,async(user)=>{
     document.getElementById('login-screen').style.display='none';
     document.getElementById('app').style.display='block';
     initDarkMode();
+    runPenaltyDecay();
+    runAutoPenalties();
     checkBadges(true);
     renderHome();
     scheduleAlarms();
