@@ -380,6 +380,19 @@ body.dark .focus-clock{color:var(--c1);}
 .journal-line b{color:var(--text);font-weight:600;}
 .wish-status{font-size:16px;}
 textarea.text-input{font-family:inherit;border:1px solid var(--border2);border-radius:8px;padding:8px;}
+
+/* QUESTS */
+.quest-row{display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--border);cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.quest-row:last-child{border-bottom:none;}
+.quest-row:active{background:var(--bg);}
+.quest-row.done{opacity:.55;cursor:default;}
+.quest-row.done .quest-label{text-decoration:line-through;}
+.quest-ic{font-size:30px;flex-shrink:0;line-height:1;}
+.quest-info{flex:1;min-width:0;}
+.quest-label{font-size:14px;font-weight:600;line-height:1.3;}
+.quest-reward{font-size:12px;color:#4AA3DF;font-weight:700;margin-top:2px;}
+.quest-check{width:30px;height:30px;border-radius:50%;border:2px solid var(--c2);color:var(--c2);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;font-weight:700;}
+.quest-row.done .quest-check{background:var(--c2);border-color:var(--c2);color:#fff;}
 </style>
 </head>
 <body>
@@ -574,6 +587,7 @@ textarea.text-input{font-family:inherit;border:1px solid var(--border2);border-r
     <div id="quote-card-container"></div>
     <div class="day-tabs" id="day-tabs"></div>
     <div id="periods-container"></div>
+    <div id="quests-container"></div>
     <div id="journal-card-container"></div>
   </div>
 
@@ -778,6 +792,11 @@ const DEFAULT_CONFIG = {
     {id:'pr3',marks:8,icon:'📵',consequence:'Tidak ada gadget besok'}
   ],
   penaltyCoinCost:15,
+  journalReward:2,
+  quests:[
+    {id:'q1',icon:'🧹',label:'Bantu bersihkan meja makan',reward:5,type:'daily'},
+    {id:'q2',icon:'📖',label:'Baca buku cerita 20 menit',reward:8,type:'once'}
+  ],
   periods:[
     {id:'pagi',label:'Pagi - Bangun Tidur',icon:'🌅',alarm:'06:00',color:'#7F77DD',dayType:'all',
       tasks:[{id:1,label:'Bangun & rapikan tempat tidur',pts:2,required:true},{id:2,label:'Cuci muka & gosok gigi',pts:2,required:true},{id:3,label:'Ganti baju',pts:1,required:true},{id:4,label:'Berdoa pagi',pts:2,required:true}]},
@@ -802,7 +821,7 @@ let pinBuffer = '';
 let userId = null;
 let pmSelectedColor = PALETTE[0];
 let pmSelectedIcon = ICONS[0];
-let walletData = { redemptions:[], penalties:[], wishlist:[] };
+let walletData = { redemptions:[], penalties:[], wishlist:[], credits:[], questLog:[] };
 let _pendingRedeem = null;
 let journalData = {};
 let journalCache = [];
@@ -813,6 +832,7 @@ const LEVEL_ICONS = ['🌱','🧭','🦁','⭐','💪','🛡️','🦸','🏆','
 const REQ_ICON = '⭐';    // bintang wajib (required)
 const BONUS_ICON = '💎';  // permata bonus (optional/extra)
 const MOODS = [{e:'😄',l:'Senang'},{e:'🙂',l:'Baik'},{e:'😐',l:'Biasa'},{e:'😟',l:'Sedih'},{e:'😢',l:'Kecewa'}];
+const QUEST_ICONS = ['🎯','🏅','🌟','🧹','📖','🪥','🛏️','🥗','🏃','🎨','🧩','🙏','💧','🐾','🎵','🌱'];
 
 // ---- UTILS ----
 function todayKey() {
@@ -910,6 +930,8 @@ async function loadFromFirestore(){
   if(!Array.isArray(config.levels)) config.levels=JSON.parse(JSON.stringify(DEFAULT_CONFIG.levels));
   if(!Array.isArray(config.penaltyRules)) config.penaltyRules=JSON.parse(JSON.stringify(DEFAULT_CONFIG.penaltyRules));
   if(typeof config.penaltyCoinCost!=='number') config.penaltyCoinCost=DEFAULT_CONFIG.penaltyCoinCost;
+  if(typeof config.journalReward!=='number') config.journalReward=DEFAULT_CONFIG.journalReward;
+  if(!Array.isArray(config.quests)) config.quests=JSON.parse(JSON.stringify(DEFAULT_CONFIG.quests));
   const todayDoc=await getDoc(doc(db,'users',userId,'days',todayKey()));
   if(todayDoc.exists()) todayData=todayDoc.data();
   const walletDoc=await getDoc(doc(db,'users',userId,'data','wallet'));
@@ -917,6 +939,8 @@ async function loadFromFirestore(){
   if(!Array.isArray(walletData.redemptions)) walletData.redemptions=[];
   if(!Array.isArray(walletData.penalties)) walletData.penalties=[];
   if(!Array.isArray(walletData.wishlist)) walletData.wishlist=[];
+  if(!Array.isArray(walletData.credits)) walletData.credits=[];
+  if(!Array.isArray(walletData.questLog)) walletData.questLog=[];
   const jDoc=await getDoc(doc(db,'users',userId,'journals',todayKey()));
   if(jDoc.exists()) journalData=jDoc.data();
   await loadJournals();
@@ -988,12 +1012,13 @@ function renderHome(){
   const gr=h<11?'Selamat pagi':h<15?'Selamat siang':h<18?'Selamat sore':'Selamat malam';
   document.getElementById('greeting').textContent=gr+', '+(config.childName||'Adik')+'! 👋';
   document.getElementById('star-gold-display').textContent=totalGoldAll();
-  document.getElementById('star-silver-display').textContent=totalSilverAll();
+  document.getElementById('star-silver-display').textContent=totalSilverAll()+bonusCredits();
   document.getElementById('date-bar').textContent=formatDate(new Date());
   renderLevelCard('level-card-container');
   renderQuote();
   renderDayTabs();
   renderPeriods();
+  renderQuests();
   renderJournalCard();
 }
 
@@ -1091,9 +1116,9 @@ function renderSummary(){
   document.getElementById('s-done').textContent=done;
   document.getElementById('s-total').textContent=all.length;
   document.getElementById('s-gold').textContent=todayGoldStars()+' ⭐';
-  document.getElementById('s-silver').textContent=todaySilverStars()+' 💎';
+  document.getElementById('s-silver').textContent=(todaySilverStars()+todayCreditsTotal())+' 💎';
   document.getElementById('s-total-gold').textContent=totalGoldAll()+' ⭐';
-  document.getElementById('s-total-silver').textContent=totalSilverAll()+' 💎';
+  document.getElementById('s-total-silver').textContent=(totalSilverAll()+bonusCredits())+' 💎';
   document.getElementById('s-streak').textContent=calcStreak();
   renderPenaltyCard();
   renderJournalHistory();
@@ -1216,7 +1241,7 @@ window.setHistFilter=async function(n,btn){
   if(n===0)await loadHistory(0);
   renderHistory();
   document.getElementById('s-total-gold').textContent=totalGoldAll()+' ⭐';
-  document.getElementById('s-total-silver').textContent=totalSilverAll()+' 💎';
+  document.getElementById('s-total-silver').textContent=(totalSilverAll()+bonusCredits())+' 💎';
 };
 
 function calcStreak(){
@@ -1271,6 +1296,7 @@ function renderAdmin(){
       <div class="admin-section-header">Umum</div>
       <div class="admin-row"><label>Nama Anak</label><input type="text" id="childNameInput" style="font-size:14px;border:none;outline:none;text-align:right;background:transparent;color:var(--text);font-family:inherit;width:150px;" value="${config.childName||'Adik'}"></div>
       <div class="admin-row"><label>PIN Admin</label><input type="text" inputmode="numeric" maxlength="4" id="newPinInput" style="font-size:14px;border:none;outline:none;text-align:right;background:transparent;color:var(--text);font-family:inherit;width:100px;" placeholder="PIN baru (4 angka)"></div>
+      <div class="admin-row"><label>Hadiah menulis jurnal (💎)</label><input type="number" min="0" value="${config.journalReward||0}" onchange="config.journalReward=parseInt(this.value)||0" class="ach-pts-input"></div>
       <div class="admin-row" style="background:${todayIsHoliday()?'#fff3f0':''};">
         <div>
           <div style="font-size:14px;font-weight:600;">Hari ini = Hari Libur</div>
@@ -1349,6 +1375,28 @@ function renderAdmin(){
             </div>
           </div>`).join('')
         : '<div style="padding:12px 16px;font-size:13px;color:var(--text3);">Belum ada permintaan dari anak</div>'}
+    </div>
+    <div class="admin-section">
+      <div class="admin-section-header">🎯 Misi Spesial (Quest)</div>
+      <div style="padding:10px 16px 4px;font-size:12px;color:var(--text3);">Misi tambahan dari orang tua. Selesai = anak dapat 💎 bonus. "Sekali" = sekali jalan, "Harian" = bisa tiap hari.</div>
+      <div id="quest-admin-list">
+        ${(config.quests||[]).map((q,qi)=>`
+          <div class="ach-admin-item">
+            <select style="font-size:20px;border:1px solid var(--border2);border-radius:8px;padding:2px 4px;background:var(--bg);cursor:pointer;font-family:inherit;" onchange="config.quests[${qi}].icon=this.value" title="Ikon">
+              ${QUEST_ICONS.map(ic=>`<option value="${ic}" ${q.icon===ic?'selected':''}>${ic}</option>`).join('')}
+            </select>
+            <input type="text" value="${q.label}" onchange="config.quests[${qi}].label=this.value" style="flex:1;min-width:80px;font-size:13px;border:none;outline:none;background:transparent;color:var(--text);font-family:inherit;">
+            <input type="number" class="ach-pts-input" value="${q.reward}" min="1" onchange="config.quests[${qi}].reward=parseInt(this.value)||1" title="Hadiah 💎">
+            <span style="font-size:12px;color:var(--text3);">💎</span>
+            <select style="font-size:12px;border:1px solid var(--border2);border-radius:8px;padding:4px;background:var(--bg);color:var(--text);font-family:inherit;cursor:pointer;" onchange="config.quests[${qi}].type=this.value">
+              <option value="once" ${q.type!=='daily'?'selected':''}>Sekali</option>
+              <option value="daily" ${q.type==='daily'?'selected':''}>Harian</option>
+            </select>
+            <button class="del-btn" onclick="delQuest(${qi})">✕</button>
+          </div>`).join('')}
+      </div>
+      <button class="add-task-btn" onclick="addQuest()">＋ Tambah Misi</button>
+      ${(walletData.questLog||[]).length?`<div style="padding:0 16px 12px;"><button onclick="clearQuestLog()" style="width:100%;padding:9px;background:var(--bg);color:var(--text2);border:1px solid var(--border2);border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">↻ Reset riwayat misi</button></div>`:''}
     </div>
     <div class="admin-section">
       <div class="admin-section-header">🏆 Level & XP</div>
@@ -1604,6 +1652,8 @@ window.importConfig=async function(event){
     if(!Array.isArray(config.levels)) config.levels=JSON.parse(JSON.stringify(DEFAULT_CONFIG.levels));
     if(!Array.isArray(config.penaltyRules)) config.penaltyRules=JSON.parse(JSON.stringify(DEFAULT_CONFIG.penaltyRules));
     if(typeof config.penaltyCoinCost!=='number') config.penaltyCoinCost=DEFAULT_CONFIG.penaltyCoinCost;
+    if(typeof config.journalReward!=='number') config.journalReward=DEFAULT_CONFIG.journalReward;
+    if(!Array.isArray(config.quests)) config.quests=JSON.parse(JSON.stringify(DEFAULT_CONFIG.quests));
     await saveConfigFS();
     showToast('✓ Config berhasil diimport!');
     renderAdmin();
@@ -2047,7 +2097,7 @@ function levelLadder(){
   return L.slice().sort((a,b)=>(a.minXP||0)-(b.minXP||0));
 }
 function getLevelInfo(){
-  const xp=totalStarsAll();
+  const xp=lifetimeEarned();
   const levels=levelLadder();
   let idx=0;
   for(let i=0;i<levels.length;i++){ if(xp>=(levels[i].minXP||0)) idx=i; }
@@ -2059,7 +2109,10 @@ function getLevelInfo(){
   return {xp,levelNum:idx+1,cur,next,pct,nextAt,curBase,isMax:!next};
 }
 function redemptionsTotal(){ return (walletData.redemptions||[]).reduce((a,r)=>a+(r.cost||0),0); }
-function currentBalance(){ return Math.max(0, totalStarsAll()-redemptionsTotal()); }
+function bonusCredits(){ return (walletData.credits||[]).reduce((a,c)=>a+(c.amount||0),0); }
+function todayCreditsTotal(){ return (walletData.credits||[]).filter(c=>c.date===todayKey()).reduce((a,c)=>a+(c.amount||0),0); }
+function lifetimeEarned(){ return totalStarsAll()+bonusCredits(); }
+function currentBalance(){ return Math.max(0, lifetimeEarned()-redemptionsTotal()); }
 
 function levelCardHTML(){
   const L=getLevelInfo();
@@ -2369,10 +2422,20 @@ window.saveJournal=async function(){
   const idx=journalCache.findIndex(j=>j.date===todayKey());
   if(idx>=0)journalCache[idx].data={...journalData};
   else journalCache.unshift({date:todayKey(),data:{...journalData}});
+  // Reward gems for writing the journal — once per day
+  const reward=config.journalReward||0;
+  const alreadyRewarded=(walletData.credits||[]).some(c=>c.source==='journal'&&c.date===todayKey());
+  if(reward>0&&!alreadyRewarded){
+    walletData.credits=walletData.credits||[];
+    walletData.credits.push({id:'c'+Date.now(),source:'journal',label:'Menulis jurnal',amount:reward,date:todayKey(),ts:Date.now()});
+    await saveWalletFS();
+    showToast('📔 Jurnal tersimpan! +'+reward+' 💎');
+  } else {
+    showToast('📔 Jurnal tersimpan!');
+  }
   closeJournalModal();
-  showToast('📔 Jurnal tersimpan!');
   playDing();
-  renderJournalCard();
+  renderHome();
 };
 
 // ---- WISHLIST ----
@@ -2417,6 +2480,59 @@ window.rejectWish=async function(id){
   showToast('Permintaan dihapus');
   if(document.getElementById('screen-admin').classList.contains('active'))renderAdmin();
   else renderRewards();
+};
+
+// ---- QUESTS ----
+function questDone(q){
+  const log=walletData.questLog||[];
+  if(q.type==='daily') return log.some(e=>e.questId===q.id&&e.date===todayKey());
+  return log.some(e=>e.questId===q.id);
+}
+function renderQuests(){
+  const el=document.getElementById('quests-container');
+  if(!el)return;
+  const quests=(config.quests||[]).filter(q=>!(q.type==='once'&&questDone(q)));
+  if(!quests.length){el.innerHTML='';return;}
+  el.innerHTML=`<div class="card"><h2>🎯 Misi Spesial</h2>${quests.map(q=>{
+    const done=questDone(q);
+    return `<div class="quest-row ${done?'done':''}" ${done?'':`onclick="completeQuest('${q.id}')"`}>
+      <span class="quest-ic">${q.icon||'🎯'}</span>
+      <div class="quest-info"><div class="quest-label">${q.label}</div><div class="quest-reward">+${q.reward||0} 💎${q.type==='daily'?' · setiap hari':''}</div></div>
+      <span class="quest-check">${done?'✓':'›'}</span>
+    </div>`;
+  }).join('')}</div>`;
+}
+window.completeQuest=async function(id){
+  const q=(config.quests||[]).find(x=>String(x.id)===String(id));
+  if(!q||questDone(q))return;
+  walletData.questLog=walletData.questLog||[];
+  walletData.credits=walletData.credits||[];
+  walletData.questLog.push({questId:q.id,date:todayKey(),ts:Date.now()});
+  walletData.credits.push({id:'c'+Date.now(),source:'quest',label:q.label,amount:q.reward||0,date:todayKey(),ts:Date.now()});
+  await saveWalletFS();
+  showToast('🎯 Misi selesai! +'+(q.reward||0)+' 💎');
+  playDing();
+  document.getElementById('congrats-emoji').textContent=q.icon||'🎯';
+  document.getElementById('congrats-title').textContent='Misi Selesai! 🎉';
+  document.getElementById('congrats-sub').textContent=`Kamu menyelesaikan "${q.label}" dan mendapat ${q.reward||0} 💎!`;
+  document.getElementById('congrats-overlay').classList.add('show');
+  renderHome();
+};
+window.addQuest=function(){
+  if(!config.quests)config.quests=[];
+  config.quests.push({id:'q'+Date.now(),icon:'🎯',label:'Misi baru',reward:5,type:'once'});
+  renderAdmin();
+};
+window.delQuest=function(qi){
+  if(!confirm('Hapus misi ini?'))return;
+  config.quests.splice(qi,1);renderAdmin();
+};
+window.clearQuestLog=async function(){
+  if(!confirm('Reset riwayat misi? Misi sekali-jalan bisa dikerjakan lagi.'))return;
+  walletData.questLog=[];
+  await saveWalletFS();
+  showToast('Riwayat misi direset');
+  renderAdmin();
 };
 
 // ---- INIT ----
