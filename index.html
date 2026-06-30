@@ -409,6 +409,36 @@ body.dark .streak-chip{background:#2e1a12;color:#e8795a;}
 .goal-bar-fill{height:16px;background:linear-gradient(90deg,var(--c1),var(--star));border-radius:8px;transition:width .5s ease;}
 .goal-toggle{margin-top:6px;width:100%;background:none;border:none;color:var(--text3);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;padding:3px;border-radius:6px;}
 .goal-toggle:active{background:var(--bg);}
+
+/* COLOR THEMES */
+body[data-theme="forest"]{--c1:#1D9E75;--c1l:#E1F5EE;--c1d:#0d5c40;}
+body.dark[data-theme="forest"]{--c1:#27c98f;--c1l:#0d2e22;--c1d:#5fe0b0;}
+body[data-theme="ocean"]{--c1:#378ADD;--c1l:#E3F0FB;--c1d:#1c5a96;}
+body.dark[data-theme="ocean"]{--c1:#5aa6ec;--c1l:#0d2236;--c1d:#9cc8f5;}
+body[data-theme="sunset"]{--c1:#D85A30;--c1l:#FAECE7;--c1d:#8f3415;}
+body.dark[data-theme="sunset"]{--c1:#e8795a;--c1l:#2e1a12;--c1d:#f0a888;}
+body[data-theme="candy"]{--c1:#D4537E;--c1l:#FBEAF0;--c1d:#8f2a52;}
+body.dark[data-theme="candy"]{--c1:#e07299;--c1l:#2e1220;--c1d:#f0a0c0;}
+
+/* MASCOT */
+.mascot-card{margin:10px 12px 0;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;}
+.mascot-face{font-size:46px;line-height:1;flex-shrink:0;animation:bob 2.4s ease-in-out infinite;}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+.mascot-bubble{flex:1;background:var(--c1l);color:var(--c1d);border-radius:14px;padding:10px 14px;font-size:14px;font-weight:600;line-height:1.4;}
+
+/* AVATAR & THEME PICKER */
+.cust-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;}
+.cust-opt{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border:2px solid var(--border);border-radius:12px;cursor:pointer;background:var(--bg);}
+.cust-opt.selected{border-color:var(--c1);background:var(--c1l);}
+.cust-opt.locked{opacity:.5;cursor:default;}
+.cust-emoji{font-size:26px;line-height:1;}
+.cust-lock{font-size:9px;color:var(--text3);margin-top:2px;}
+.cust-theme-row{display:flex;gap:12px;flex-wrap:wrap;}
+.cust-theme{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;}
+.cust-theme.locked{opacity:.5;cursor:default;}
+.cust-sw{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:17px;font-weight:700;box-shadow:0 0 0 2px var(--border);}
+.cust-theme.selected .cust-sw{box-shadow:0 0 0 3px var(--c1);}
+.cust-theme-name{font-size:11px;color:var(--text2);}
 </style>
 </head>
 <body>
@@ -600,6 +630,7 @@ body.dark .streak-chip{background:#2e1a12;color:#e8795a;}
       <div class="clock-countdown" id="clock-countdown"></div>
     </div>
     <div class="date-bar" id="date-bar"></div>
+    <div id="mascot-container"></div>
     <div id="level-card-container"></div>
     <div id="quote-card-container"></div>
     <div class="day-tabs" id="day-tabs"></div>
@@ -632,6 +663,7 @@ body.dark .streak-chip{background:#2e1a12;color:#e8795a;}
       </div>
     </div>
     <div id="badges-container"></div>
+    <div id="customize-container"></div>
     <div id="penalty-card-container"></div>
     <div id="journal-history-container"></div>
     <div id="weekly-reports-container"></div>
@@ -856,6 +888,18 @@ const REQ_ICON = '⭐';    // bintang wajib (required)
 const BONUS_ICON = '💎';  // permata bonus (optional/extra)
 const MOODS = [{e:'😄',l:'Senang'},{e:'🙂',l:'Baik'},{e:'😐',l:'Biasa'},{e:'😟',l:'Sedih'},{e:'😢',l:'Kecewa'}];
 const QUEST_ICONS = ['🎯','🏅','🌟','🧹','📖','🪥','🛏️','🥗','🏃','🎨','🧩','🙏','💧','🐾','🎵','🌱'];
+const THEMES = [
+  {id:'default',name:'Ungu',sw:'#7F77DD',minLevel:1},
+  {id:'forest',name:'Hutan',sw:'#1D9E75',minLevel:1},
+  {id:'ocean',name:'Laut',sw:'#378ADD',minLevel:3},
+  {id:'sunset',name:'Senja',sw:'#D85A30',minLevel:5},
+  {id:'candy',name:'Permen',sw:'#D4537E',minLevel:7}
+];
+const AVATARS = [
+  {e:'🦊',minLevel:1},{e:'🐱',minLevel:1},{e:'🐶',minLevel:1},{e:'🐰',minLevel:2},
+  {e:'🐻',minLevel:3},{e:'🐯',minLevel:4},{e:'🦁',minLevel:5},{e:'🐲',minLevel:6},
+  {e:'🦄',minLevel:7},{e:'🐉',minLevel:8},{e:'👑',minLevel:10}
+];
 
 // ---- UTILS ----
 function todayKey() {
@@ -1043,6 +1087,7 @@ function renderHome(){
   document.getElementById('star-gold-display').textContent=totalGoldAll();
   document.getElementById('star-silver-display').textContent=totalSilverAll()+bonusCredits();
   document.getElementById('date-bar').textContent=formatDate(new Date());
+  renderMascot();
   renderLevelCard('level-card-container');
   renderQuote();
   renderDayTabs();
@@ -1154,6 +1199,7 @@ function renderSummary(){
   document.getElementById('s-total-silver').textContent=(totalSilverAll()+bonusCredits())+' 💎';
   document.getElementById('s-streak').textContent=calcStreak();
   renderBadges();
+  renderCustomize();
   renderPenaltyCard();
   renderJournalHistory();
   renderWeeklyReports();
@@ -2776,6 +2822,52 @@ function checkBadges(silent){
   }
   return newly;
 }
+function progressPctToday(){
+  const req=todayTasks().filter(t=>t.required!==false);
+  if(!req.length) return 100;
+  const done=req.filter(t=>todayData[String(t.id)]).length;
+  return Math.round(done/req.length*100);
+}
+function renderMascot(){
+  const el=document.getElementById('mascot-container'); if(!el)return;
+  const av=walletData.avatar||'🦊';
+  const pct=progressPctToday();
+  let msg;
+  if(pct>=100) msg='Semua tugas wajib selesai! Kamu hebat! 🎉';
+  else if(pct>=50) msg='Sudah lebih dari separuh, ayo lanjut! 💪';
+  else if(pct>0) msg='Bagus, teruskan ya! 😊';
+  else msg='Hai! Ayo mulai tugasmu hari ini! ✨';
+  el.innerHTML=`<div class="mascot-card"><div class="mascot-face">${av}</div><div class="mascot-bubble">${msg}</div></div>`;
+}
+function renderCustomize(){
+  const el=document.getElementById('customize-container'); if(!el)return;
+  const lvl=getLevelInfo().levelNum;
+  const avatar=walletData.avatar||'🦊';
+  const theme=walletData.activeTheme||'default';
+  const avHtml=AVATARS.map(a=>{
+    const unlocked=lvl>=a.minLevel;
+    return `<div class="cust-opt ${avatar===a.e?'selected':''} ${unlocked?'':'locked'}" ${unlocked?`onclick="setAvatar('${a.e}')"`:''}>
+      <div class="cust-emoji">${unlocked?a.e:'🔒'}</div>${unlocked?'':`<div class="cust-lock">Lv${a.minLevel}</div>`}
+    </div>`;
+  }).join('');
+  const thHtml=THEMES.map(t=>{
+    const unlocked=lvl>=t.minLevel;
+    return `<div class="cust-theme ${theme===t.id?'selected':''} ${unlocked?'':'locked'}" ${unlocked?`onclick="setTheme('${t.id}')"`:''}>
+      <div class="cust-sw" style="background:${t.sw}">${unlocked?(theme===t.id?'✓':''):'🔒'}</div>
+      <div class="cust-theme-name">${unlocked?t.name:'Lv'+t.minLevel}</div>
+    </div>`;
+  }).join('');
+  el.innerHTML=`<div class="card">
+    <h2>🎨 Avatar &amp; Tema</h2>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:8px;">Buka avatar &amp; tema baru dengan naik level! 🔓</div>
+    <div style="font-size:13px;font-weight:600;margin:8px 0 6px;">Avatar</div>
+    <div class="cust-grid">${avHtml}</div>
+    <div style="font-size:13px;font-weight:600;margin:16px 0 8px;">Tema Warna</div>
+    <div class="cust-theme-row">${thHtml}</div>
+  </div>`;
+}
+window.setAvatar=async function(e){ walletData.avatar=e; await saveWalletFS(); renderCustomize(); renderMascot(); showToast('Avatar diganti! '+e); };
+window.setTheme=async function(id){ walletData.activeTheme=id; document.body.setAttribute('data-theme',id); await saveWalletFS(); renderCustomize(); showToast('Tema diganti!'); };
 function renderBadges(){
   const el=document.getElementById('badges-container');
   if(!el)return;
@@ -2800,6 +2892,7 @@ onAuthStateChanged(auth,async(user)=>{
     document.getElementById('login-screen').style.display='none';
     document.getElementById('app').style.display='block';
     initDarkMode();
+    document.body.setAttribute('data-theme', walletData.activeTheme||'default');
     runPenaltyDecay();
     runAutoPenalties();
     checkBadges(true);
