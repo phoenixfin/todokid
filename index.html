@@ -393,6 +393,16 @@ textarea.text-input{font-family:inherit;border:1px solid var(--border2);border-r
 .quest-reward{font-size:12px;color:#4AA3DF;font-weight:700;margin-top:2px;}
 .quest-check{width:30px;height:30px;border-radius:50%;border:2px solid var(--c2);color:var(--c2);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;font-weight:700;}
 .quest-row.done .quest-check{background:var(--c2);border-color:var(--c2);color:#fff;}
+
+/* BADGES & STREAK CHIP */
+.badge-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.badge-item{display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;padding:12px 6px;border-radius:12px;border:1px solid var(--border);}
+.badge-item.earned{background:var(--c5l);border-color:var(--c5);}
+.badge-item.locked{background:var(--bg);opacity:.55;}
+.badge-ic{font-size:32px;line-height:1;}
+.badge-title{font-size:11px;font-weight:600;color:var(--text);line-height:1.2;}
+.streak-chip{font-size:11px;font-weight:700;color:#D85A30;background:#FAECE7;padding:1px 7px;border-radius:9px;margin-right:6px;white-space:nowrap;}
+body.dark .streak-chip{background:#2e1a12;color:#e8795a;}
 </style>
 </head>
 <body>
@@ -614,6 +624,7 @@ textarea.text-input{font-family:inherit;border:1px solid var(--border2);border-r
         <div style="text-align:center;"><div style="font-size:32px;font-weight:700;color:#4AA3DF;" id="s-total-silver">0 💎</div><div style="font-size:12px;color:var(--text2);margin-top:2px;">Bonus</div></div>
       </div>
     </div>
+    <div id="badges-container"></div>
     <div id="penalty-card-container"></div>
     <div id="journal-history-container"></div>
     <div id="weekly-reports-container"></div>
@@ -821,7 +832,7 @@ let pinBuffer = '';
 let userId = null;
 let pmSelectedColor = PALETTE[0];
 let pmSelectedIcon = ICONS[0];
-let walletData = { redemptions:[], penalties:[], wishlist:[], credits:[], questLog:[] };
+let walletData = { redemptions:[], penalties:[], wishlist:[], credits:[], questLog:[], badges:[] };
 let _pendingRedeem = null;
 let journalData = {};
 let journalCache = [];
@@ -941,6 +952,7 @@ async function loadFromFirestore(){
   if(!Array.isArray(walletData.wishlist)) walletData.wishlist=[];
   if(!Array.isArray(walletData.credits)) walletData.credits=[];
   if(!Array.isArray(walletData.questLog)) walletData.questLog=[];
+  if(!Array.isArray(walletData.badges)) walletData.badges=[];
   const jDoc=await getDoc(doc(db,'users',userId,'journals',todayKey()));
   if(jDoc.exists()) journalData=jDoc.data();
   await loadJournals();
@@ -1049,11 +1061,14 @@ function renderPeriods(){
         const starIcon=isReq?REQ_ICON:BONUS_ICON;
         const starClass=isReq?'star-gold':'star-silver';
         const clickable=!locked||isDone;
+        const st=taskStreak(t.id);
+        const streakChip=st>=3?`<span class="streak-chip">🔥${st}</span>`:'';
         return `<div class="task-item ${isDone?'done':''} ${isReq&&!locked?'required':''}" style="${locked&&!isDone?'opacity:.45;':''}${clickable?'':'pointer-events:none;'}" onclick="${clickable?`toggleTask('${t.id}','${p.id}')`:''}" >
           <div class="task-check" style="${isDone?'background:'+color+';border-color:'+color:''}${locked&&!isDone?'border-color:#ccc':''}">
             ${isDone?'✓':locked?'🔒':''}
           </div>
           <span class="task-label">${t.label}</span>
+          ${streakChip}
           <span class="task-pts ${isDone?starClass:''}">${isDone?'+':''}${t.pts} ${starIcon}</span>
         </div>`;
       }).join('');
@@ -1103,6 +1118,7 @@ window.toggleTask=function(taskId,periodId){
   else historyCache.unshift({date:todayKey(),data:{...todayData}});
   renderHome();
   if(document.getElementById('focus-overlay').classList.contains('show'))renderFocus();
+  checkBadges(false);
   const required=todayTasks().filter(t2=>t2.required!==false);
   if(required.length>0&&required.every(t2=>todayData[String(t2.id)]))
     setTimeout(()=>showCongrats(),400);
@@ -1120,6 +1136,7 @@ function renderSummary(){
   document.getElementById('s-total-gold').textContent=totalGoldAll()+' ⭐';
   document.getElementById('s-total-silver').textContent=(totalSilverAll()+bonusCredits())+' 💎';
   document.getElementById('s-streak').textContent=calcStreak();
+  renderBadges();
   renderPenaltyCard();
   renderJournalHistory();
   renderWeeklyReports();
@@ -2436,6 +2453,7 @@ window.saveJournal=async function(){
   closeJournalModal();
   playDing();
   renderHome();
+  checkBadges(false);
 };
 
 // ---- WISHLIST ----
@@ -2517,6 +2535,7 @@ window.completeQuest=async function(id){
   document.getElementById('congrats-sub').textContent=`Kamu menyelesaikan "${q.label}" dan mendapat ${q.reward||0} 💎!`;
   document.getElementById('congrats-overlay').classList.add('show');
   renderHome();
+  checkBadges(false);
 };
 window.addQuest=function(){
   if(!config.quests)config.quests=[];
@@ -2535,6 +2554,99 @@ window.clearQuestLog=async function(){
   renderAdmin();
 };
 
+// ---- PER-TASK STREAKS & BADGES ----
+function taskScheduledOn(taskId,d){
+  for(const p of config.periods){
+    if(p.tasks.some(t=>String(t.id)===String(taskId))){
+      const dt=getDayType(d);
+      return p.dayType==='all'||p.dayType===dt;
+    }
+  }
+  return false;
+}
+function taskDoneOn(taskId,d){
+  const k=dateKey(d);
+  if(k===todayKey()) return !!todayData[String(taskId)];
+  const h=historyCache.find(x=>x.date===k);
+  return !!(h&&h.data[String(taskId)]);
+}
+function taskStreak(taskId){
+  let streak=0;
+  for(let i=0;i<120;i++){
+    const d=new Date(); d.setDate(d.getDate()-i);
+    if(!taskScheduledOn(taskId,d)) continue;
+    if(taskDoneOn(taskId,d)) streak++;
+    else { if(i===0) continue; break; }
+  }
+  return streak;
+}
+function totalTasksCompleted(){
+  let n=0;
+  historyCache.forEach(h=>{ n+=Object.values(h.data).filter(v=>typeof v==='number').length; });
+  return n;
+}
+function maxCurrentTaskStreak(){
+  let mx=0;
+  config.periods.forEach(p=>p.tasks.forEach(t=>{ const s=taskStreak(t.id); if(s>mx)mx=s; }));
+  return mx;
+}
+function gameStats(){
+  return {
+    lifetime: lifetimeEarned(),
+    streak: calcStreak(),
+    questsDone: (walletData.questLog||[]).length,
+    journals: journalCache.filter(j=>j.data&&(j.data.mood||j.data.deed||j.data.gratitude||j.data.note)).length,
+    tasksCompleted: totalTasksCompleted(),
+    maxTaskStreak: maxCurrentTaskStreak()
+  };
+}
+const BADGES=[
+  {id:'first',icon:'🌟',title:'Langkah Pertama',desc:'Selesaikan tugas pertamamu',check:s=>s.tasksCompleted>=1},
+  {id:'stars100',icon:'💯',title:'Kolektor Bintang',desc:'Kumpulkan 100 bintang',check:s=>s.lifetime>=100},
+  {id:'stars500',icon:'🏅',title:'Pemburu Bintang',desc:'Kumpulkan 500 bintang',check:s=>s.lifetime>=500},
+  {id:'stars1000',icon:'👑',title:'Raja Bintang',desc:'Kumpulkan 1000 bintang',check:s=>s.lifetime>=1000},
+  {id:'streak3',icon:'🔥',title:'Konsisten',desc:'3 hari beruntun tugas wajib selesai',check:s=>s.streak>=3},
+  {id:'streak7',icon:'⚡',title:'Seminggu Penuh',desc:'7 hari beruntun',check:s=>s.streak>=7},
+  {id:'streak30',icon:'🏆',title:'Sebulan Hebat',desc:'30 hari beruntun',check:s=>s.streak>=30},
+  {id:'quests5',icon:'🎯',title:'Petualang',desc:'Selesaikan 5 misi spesial',check:s=>s.questsDone>=5},
+  {id:'journal7',icon:'📔',title:'Penulis Cilik',desc:'Tulis jurnal 7 kali',check:s=>s.journals>=7},
+  {id:'taskstreak7',icon:'🪥',title:'Rajin Rutin',desc:'Satu kebiasaan 7 hari beruntun',check:s=>s.maxTaskStreak>=7}
+];
+function checkBadges(silent){
+  const s=gameStats();
+  walletData.badges=walletData.badges||[];
+  const newly=[];
+  BADGES.forEach(b=>{
+    if(b.check(s)&&!walletData.badges.includes(b.id)){ walletData.badges.push(b.id); newly.push(b); }
+  });
+  if(newly.length){
+    saveWalletFS();
+    if(!silent&&!document.getElementById('congrats-overlay').classList.contains('show')){
+      const b=newly[0];
+      document.getElementById('congrats-emoji').textContent=b.icon;
+      document.getElementById('congrats-title').textContent='Lencana Baru! '+b.icon;
+      document.getElementById('congrats-sub').textContent=`Kamu mendapat lencana "${b.title}" — ${b.desc}!`;
+      document.getElementById('congrats-overlay').classList.add('show');
+      playDing();
+    }
+  }
+  return newly;
+}
+function renderBadges(){
+  const el=document.getElementById('badges-container');
+  if(!el)return;
+  const earned=new Set(walletData.badges||[]);
+  const got=BADGES.filter(b=>earned.has(b.id)).length;
+  el.innerHTML=`<div class="card"><h2>🎖️ Lencana <span style="color:var(--text3);font-weight:400;">(${got}/${BADGES.length})</span></h2>
+    <div class="badge-grid">${BADGES.map(b=>{
+      const has=earned.has(b.id);
+      return `<div class="badge-item ${has?'earned':'locked'}" title="${b.desc}">
+        <div class="badge-ic">${has?b.icon:'🔒'}</div>
+        <div class="badge-title">${b.title}</div>
+      </div>`;
+    }).join('')}</div></div>`;
+}
+
 // ---- INIT ----
 onAuthStateChanged(auth,async(user)=>{
   if(user){
@@ -2544,6 +2656,7 @@ onAuthStateChanged(auth,async(user)=>{
     document.getElementById('login-screen').style.display='none';
     document.getElementById('app').style.display='block';
     initDarkMode();
+    checkBadges(true);
     renderHome();
     scheduleAlarms();
     startClock();
