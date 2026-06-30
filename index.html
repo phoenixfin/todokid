@@ -366,6 +366,20 @@ body.dark .focus-clock{color:var(--c1);}
 .penalty-log-row span:first-child{flex:1;min-width:0;}
 .penalty-date{font-size:11px;color:var(--text3);white-space:nowrap;}
 .penalty-marks{font-weight:700;color:var(--c3);white-space:nowrap;}
+
+/* JOURNAL */
+.journal-card{margin:12px 12px 0;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;}
+.mood-picker{display:flex;gap:6px;justify-content:space-between;}
+.mood-opt{flex:1;text-align:center;padding:8px 2px;border-radius:12px;border:2px solid var(--border);cursor:pointer;font-size:26px;background:var(--bg);line-height:1;}
+.mood-opt.selected{border-color:var(--c1);background:var(--c1l);}
+.mood-opt .mood-lbl{display:block;font-size:10px;color:var(--text2);margin-top:3px;}
+.journal-entry{padding:10px 0;border-top:1px solid var(--border);}
+.journal-entry-head{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);}
+.journal-entry-mood{font-size:22px;}
+.journal-line{font-size:13px;color:var(--text2);margin-top:4px;line-height:1.4;}
+.journal-line b{color:var(--text);font-weight:600;}
+.wish-status{font-size:16px;}
+textarea.text-input{font-family:inherit;border:1px solid var(--border2);border-radius:8px;padding:8px;}
 </style>
 </head>
 <body>
@@ -486,6 +500,58 @@ body.dark .focus-clock{color:var(--c1);}
     </div>
   </div>
 
+  <!-- Journal Modal -->
+  <div class="modal-overlay" id="journal-modal">
+    <div class="modal-box">
+      <h3>📔 Jurnal Hari Ini</h3>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:8px;">Bagaimana perasaanmu hari ini?</div>
+      <div class="mood-picker" id="journal-moods"></div>
+      <label style="font-size:13px;color:var(--text2);display:block;margin-top:16px;">💛 Satu kebaikan yang kamu lakukan hari ini</label>
+      <input type="text" id="journal-deed" class="text-input" placeholder="mis. membantu ibu menyapu...">
+      <label style="font-size:13px;color:var(--text2);display:block;margin-top:16px;">🙏 Satu hal yang kamu syukuri</label>
+      <input type="text" id="journal-gratitude" class="text-input" placeholder="mis. keluarga yang sayang...">
+      <label style="font-size:13px;color:var(--text2);display:block;margin-top:16px;">📝 Catatan bebas (opsional)</label>
+      <textarea id="journal-note" class="text-input" rows="2" style="width:100%;"></textarea>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeJournalModal()">Batal</button>
+        <button class="btn-confirm" onclick="saveJournal()">Simpan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Wishlist Request Modal -->
+  <div class="modal-overlay" id="wish-modal">
+    <div class="modal-box">
+      <h3>🎁 Minta Hadiah Baru</h3>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:10px;">Tulis hadiah yang kamu inginkan. Orang tua yang akan menentukan harga bintangnya.</div>
+      <input type="text" id="wish-label" class="text-input" placeholder="mis. Buku cerita baru">
+      <div style="font-size:13px;color:var(--text2);margin-top:16px;">Pilih ikon</div>
+      <div class="icon-picker" id="wish-icons"></div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeWishModal()">Batal</button>
+        <button class="btn-confirm" onclick="submitWish()">Kirim Permintaan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Penalty Buy-off Modal -->
+  <div class="modal-overlay" id="penalty-redeem-modal">
+    <div class="modal-box">
+      <h3>⚖️ Tebus Penalti</h3>
+      <div id="penalty-redeem-info"></div>
+      <label style="font-size:13px;color:var(--text2);display:block;margin-top:6px;">Berapa poin penalti yang ditebus?</label>
+      <input type="number" id="penalty-redeem-amount" class="text-input" style="width:auto;" min="1" oninput="updatePenaltyRedeemCost()">
+      <div id="penalty-redeem-cost" style="font-size:14px;font-weight:600;margin-top:8px;"></div>
+      <p style="font-size:13px;color:var(--text2);margin:14px 0 6px;text-align:center;">PIN orang tua untuk menyetujui</p>
+      <input type="password" inputmode="numeric" maxlength="4" id="penalty-redeem-pin" class="redeem-pin-input" placeholder="••••" onkeydown="if(event.key==='Enter')confirmPenaltyRedeem()">
+      <div id="penalty-redeem-error" style="color:#E24B4A;font-size:13px;text-align:center;height:18px;margin-top:8px;"></div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closePenaltyRedeemModal()">Batal</button>
+        <button class="btn-confirm" onclick="confirmPenaltyRedeem()">Tebus</button>
+      </div>
+    </div>
+  </div>
+
   <!-- HOME -->
   <div id="screen-home" class="screen active">
     <div class="top-bar">
@@ -508,6 +574,7 @@ body.dark .focus-clock{color:var(--c1);}
     <div id="quote-card-container"></div>
     <div class="day-tabs" id="day-tabs"></div>
     <div id="periods-container"></div>
+    <div id="journal-card-container"></div>
   </div>
 
   <!-- SUMMARY / ACHIEVEMENT -->
@@ -534,6 +601,7 @@ body.dark .focus-clock{color:var(--c1);}
       </div>
     </div>
     <div id="penalty-card-container"></div>
+    <div id="journal-history-container"></div>
     <div id="weekly-reports-container"></div>
     <div class="card" style="margin-bottom:12px;">
       <h2>Riwayat Harian</h2>
@@ -709,6 +777,7 @@ const DEFAULT_CONFIG = {
     {id:'pr2',marks:5,icon:'⛔',consequence:'Tidak ada waktu bermain hari ini'},
     {id:'pr3',marks:8,icon:'📵',consequence:'Tidak ada gadget besok'}
   ],
+  penaltyCoinCost:15,
   periods:[
     {id:'pagi',label:'Pagi - Bangun Tidur',icon:'🌅',alarm:'06:00',color:'#7F77DD',dayType:'all',
       tasks:[{id:1,label:'Bangun & rapikan tempat tidur',pts:2,required:true},{id:2,label:'Cuci muka & gosok gigi',pts:2,required:true},{id:3,label:'Ganti baju',pts:1,required:true},{id:4,label:'Berdoa pagi',pts:2,required:true}]},
@@ -733,12 +802,17 @@ let pinBuffer = '';
 let userId = null;
 let pmSelectedColor = PALETTE[0];
 let pmSelectedIcon = ICONS[0];
-let walletData = { redemptions:[], penalties:[] };
+let walletData = { redemptions:[], penalties:[], wishlist:[] };
 let _pendingRedeem = null;
+let journalData = {};
+let journalCache = [];
+let _journalMood = '🙂';
+let _wishIcon = '🎁';
 const REWARD_ICONS = ['🎁','📺','🎮','🍦','🧸','🎡','🍕','🍫','📚','🚲','🎨','⚽','🎬','🛍️','💰','🏊','🎢','🐶'];
 const LEVEL_ICONS = ['🌱','🧭','🦁','⭐','💪','🛡️','🦸','🏆','🌟','👑','🚀','🥇','🔥','💎'];
 const REQ_ICON = '⭐';    // bintang wajib (required)
 const BONUS_ICON = '💎';  // permata bonus (optional/extra)
+const MOODS = [{e:'😄',l:'Senang'},{e:'🙂',l:'Baik'},{e:'😐',l:'Biasa'},{e:'😟',l:'Sedih'},{e:'😢',l:'Kecewa'}];
 
 // ---- UTILS ----
 function todayKey() {
@@ -835,12 +909,17 @@ async function loadFromFirestore(){
   if(!Array.isArray(config.rewards)) config.rewards=JSON.parse(JSON.stringify(DEFAULT_CONFIG.rewards));
   if(!Array.isArray(config.levels)) config.levels=JSON.parse(JSON.stringify(DEFAULT_CONFIG.levels));
   if(!Array.isArray(config.penaltyRules)) config.penaltyRules=JSON.parse(JSON.stringify(DEFAULT_CONFIG.penaltyRules));
+  if(typeof config.penaltyCoinCost!=='number') config.penaltyCoinCost=DEFAULT_CONFIG.penaltyCoinCost;
   const todayDoc=await getDoc(doc(db,'users',userId,'days',todayKey()));
   if(todayDoc.exists()) todayData=todayDoc.data();
   const walletDoc=await getDoc(doc(db,'users',userId,'data','wallet'));
   if(walletDoc.exists()) walletData=walletDoc.data();
   if(!Array.isArray(walletData.redemptions)) walletData.redemptions=[];
   if(!Array.isArray(walletData.penalties)) walletData.penalties=[];
+  if(!Array.isArray(walletData.wishlist)) walletData.wishlist=[];
+  const jDoc=await getDoc(doc(db,'users',userId,'journals',todayKey()));
+  if(jDoc.exists()) journalData=jDoc.data();
+  await loadJournals();
   await loadHistory(0);
 }
 async function saveConfigFS(){
@@ -857,6 +936,19 @@ async function saveWalletFS(){
   showSync();
   try{await setDoc(doc(db,'users',userId,'data','wallet'),walletData);}catch(e){console.error(e);}
   hideSync();
+}
+async function saveJournalFS(){
+  showSync();
+  try{await setDoc(doc(db,'users',userId,'journals',todayKey()),journalData);}catch(e){console.error(e);}
+  hideSync();
+}
+async function loadJournals(){
+  try{
+    const col=collection(db,'users',userId,'journals');
+    const snap=await getDocs(query(col,orderBy('__name__','desc')));
+    journalCache=[];
+    snap.forEach(d=>journalCache.push({date:d.id,data:d.data()}));
+  }catch(e){console.error(e);}
 }
 async function loadHistory(filterDays){
   try{
@@ -902,6 +994,7 @@ function renderHome(){
   renderQuote();
   renderDayTabs();
   renderPeriods();
+  renderJournalCard();
 }
 
 function renderPeriods(){
@@ -1003,6 +1096,7 @@ function renderSummary(){
   document.getElementById('s-total-silver').textContent=totalSilverAll()+' 💎';
   document.getElementById('s-streak').textContent=calcStreak();
   renderPenaltyCard();
+  renderJournalHistory();
   renderWeeklyReports();
   renderHistory();
 }
@@ -1241,6 +1335,22 @@ function renderAdmin(){
       <button class="add-task-btn" onclick="addReward()">＋ Tambah Hadiah</button>
     </div>
     <div class="admin-section">
+      <div class="admin-section-header">✨ Permintaan Hadiah (Wishlist)</div>
+      <div style="padding:10px 16px 4px;font-size:12px;color:var(--text3);">Permintaan dari anak. Tentukan harga bintang lalu setujui untuk memasukkannya ke Toko Hadiah.</div>
+      ${(walletData.wishlist||[]).length
+        ? (walletData.wishlist||[]).map(w=>`
+          <div class="admin-row" style="flex-wrap:wrap;gap:8px;">
+            <span style="flex:1;min-width:110px;font-size:14px;">${w.icon||'🎁'} ${w.label}</span>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <input type="number" id="wishcost-${w.id}" class="ach-pts-input" placeholder="harga" min="1">
+              <span style="font-size:12px;color:var(--text3);">⭐</span>
+              <button onclick="approveWish('${w.id}')" style="background:var(--c2);color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">Setujui</button>
+              <button class="del-btn" onclick="rejectWish('${w.id}')">✕</button>
+            </div>
+          </div>`).join('')
+        : '<div style="padding:12px 16px;font-size:13px;color:var(--text3);">Belum ada permintaan dari anak</div>'}
+    </div>
+    <div class="admin-section">
       <div class="admin-section-header">🏆 Level & XP</div>
       <div style="padding:10px 16px 4px;font-size:12px;color:var(--text3);">Level dihitung dari total bintang yang pernah dikumpulkan (XP). XP tidak berkurang saat menukar hadiah.</div>
       <div id="level-admin-list">
@@ -1260,6 +1370,7 @@ function renderAdmin(){
     <div class="admin-section">
       <div class="admin-section-header">⚠️ Penalti</div>
       <div style="padding:10px 16px 4px;font-size:12px;color:var(--text3);">Poin penalti TERPISAH dari bintang &amp; hadiah. Berikan saat anak melanggar.</div>
+      <div class="admin-row"><label>Harga tebus penalti (⭐ / poin)</label><input type="number" min="1" value="${config.penaltyCoinCost||15}" onchange="config.penaltyCoinCost=parseInt(this.value)||1" class="ach-pts-input"></div>
       <div style="padding:8px 16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
         <input type="text" id="penalty-reason" placeholder="Alasan (mis. tidak mau mandi)" style="flex:1;min-width:140px;font-size:14px;border:1px solid var(--border2);border-radius:8px;padding:8px 10px;background:var(--bg);color:var(--text);font-family:inherit;">
         <input type="number" id="penalty-marks" value="1" min="1" max="10" class="pts-input">
@@ -1492,6 +1603,7 @@ window.importConfig=async function(event){
     if(!Array.isArray(config.rewards)) config.rewards=JSON.parse(JSON.stringify(DEFAULT_CONFIG.rewards));
     if(!Array.isArray(config.levels)) config.levels=JSON.parse(JSON.stringify(DEFAULT_CONFIG.levels));
     if(!Array.isArray(config.penaltyRules)) config.penaltyRules=JSON.parse(JSON.stringify(DEFAULT_CONFIG.penaltyRules));
+    if(typeof config.penaltyCoinCost!=='number') config.penaltyCoinCost=DEFAULT_CONFIG.penaltyCoinCost;
     await saveConfigFS();
     showToast('✓ Config berhasil diimport!');
     renderAdmin();
@@ -1998,6 +2110,14 @@ function renderRewards(){
         </div>`;
       }).join('')
     : '<div style="color:var(--text3);font-size:13px;text-align:center;padding:12px;">Belum ada penukaran</div>';
+  const wishes=(walletData.wishlist||[]);
+  const wishesHtml=wishes.length
+    ? wishes.map(w=>`<div class="redeem-row">
+        <span class="redeem-ic">${w.icon||'🎁'}</span>
+        <div class="redeem-info"><div>${w.label}</div><div class="redeem-date">Menunggu persetujuan orang tua</div></div>
+        ${adminUnlocked?`<button class="del-btn" onclick="rejectWish('${w.id}')">✕</button>`:'<span class="wish-status">⏳</span>'}
+      </div>`).join('')
+    : '<div style="color:var(--text3);font-size:13px;text-align:center;padding:8px;">Belum ada permintaan. Tekan tombol di bawah untuk meminta hadiah baru.</div>';
   cont.innerHTML=`
     ${levelCardHTML()}
     <div class="balance-hero">
@@ -2005,6 +2125,9 @@ function renderRewards(){
       <div class="balance-lbl">bintang bisa kamu tukar dengan hadiah</div>
     </div>
     <div class="card"><h2>🎁 Toko Hadiah</h2><div class="reward-grid">${grid}</div></div>
+    <div class="card"><h2>✨ Permintaan Hadiahku</h2>${wishesHtml}
+      <button onclick="openWishModal()" style="width:100%;margin-top:10px;padding:11px;background:var(--bg);color:var(--c1);border:1.5px dashed var(--c1);border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;">＋ Minta Hadiah Baru</button>
+    </div>
     <div class="card" style="margin-bottom:12px;"><h2>Riwayat Penukaran</h2>${histHtml}</div>`;
 }
 
@@ -2091,6 +2214,7 @@ function penaltyCardHTML(){
       </div>
     </div>
     <div style="margin-top:10px;">${logHtml}</div>
+    ${t>0?`<button onclick="openPenaltyRedeem()" style="width:100%;margin-top:12px;padding:10px;background:var(--c1l);color:var(--c1d);border:1px solid var(--c1);border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;">⚖️ Tebus penalti dengan bintang (${penaltyCoinCost()}⭐/poin)</button>`:''}
   </div>`;
 }
 function renderPenaltyCard(){ const el=document.getElementById('penalty-card-container'); if(el) el.innerHTML=penaltyCardHTML(); }
@@ -2126,6 +2250,174 @@ window.addPenaltyRule=function(){
   renderAdmin();
 };
 window.delPenaltyRule=function(ri){ config.penaltyRules.splice(ri,1); renderAdmin(); };
+
+function penaltyCoinCost(){ return config.penaltyCoinCost||15; }
+function reducePenaltyMarks(n){
+  let rem=n;
+  const list=(walletData.penalties||[]).slice().sort((a,b)=>(a.ts||0)-(b.ts||0));
+  for(const p of list){
+    if(rem<=0)break;
+    if(p.marks<=rem){rem-=p.marks;p.marks=0;}
+    else{p.marks-=rem;rem=0;}
+  }
+  walletData.penalties=(walletData.penalties||[]).filter(p=>p.marks>0);
+}
+window.openPenaltyRedeem=function(){
+  const t=penaltyTotal();
+  if(t<=0)return;
+  const amtEl=document.getElementById('penalty-redeem-amount');
+  amtEl.max=t; amtEl.value=t;
+  document.getElementById('penalty-redeem-info').innerHTML=
+    `<div style="text-align:center;margin-bottom:8px;"><div style="font-size:40px;">⚖️</div><div style="font-size:13px;color:var(--text2);margin-top:4px;">Poin penalti saat ini: <b>${t}</b><br>Harga: <b>${penaltyCoinCost()} ⭐</b> per poin</div></div>`;
+  document.getElementById('penalty-redeem-pin').value='';
+  document.getElementById('penalty-redeem-error').textContent='';
+  updatePenaltyRedeemCost();
+  document.getElementById('penalty-redeem-modal').classList.add('show');
+};
+window.updatePenaltyRedeemCost=function(){
+  const t=penaltyTotal();
+  let amt=parseInt(document.getElementById('penalty-redeem-amount').value)||0;
+  amt=Math.max(0,Math.min(amt,t));
+  const cost=amt*penaltyCoinCost();
+  const bal=currentBalance();
+  document.getElementById('penalty-redeem-cost').innerHTML=
+    `Total biaya: <span style="color:var(--star);">${cost} ⭐</span> · bintangmu: ${bal} ⭐`+(cost>bal?' <span style="color:#E24B4A;">(kurang)</span>':'');
+};
+window.closePenaltyRedeemModal=function(){document.getElementById('penalty-redeem-modal').classList.remove('show');};
+window.confirmPenaltyRedeem=async function(){
+  const t=penaltyTotal();
+  let amt=parseInt(document.getElementById('penalty-redeem-amount').value)||0;
+  amt=Math.max(1,Math.min(amt,t));
+  const cost=amt*penaltyCoinCost();
+  const err=document.getElementById('penalty-redeem-error');
+  if(document.getElementById('penalty-redeem-pin').value.trim()!==config.pin){err.textContent='PIN salah';return;}
+  if(cost>currentBalance()){err.textContent='Bintang tidak cukup';return;}
+  reducePenaltyMarks(amt);
+  walletData.redemptions=walletData.redemptions||[];
+  walletData.redemptions.push({id:'rd'+Date.now(),label:'Tebus penalti ('+amt+' poin)',icon:'⚖️',cost,date:todayKey(),ts:Date.now(),type:'penalty'});
+  await saveWalletFS();
+  closePenaltyRedeemModal();
+  showToast('⚖️ '+amt+' poin penalti ditebus');
+  playDing();
+  renderSummary();
+};
+
+// ---- JOURNAL ----
+function todayJournalFilled(){ return !!(journalData&&(journalData.mood||journalData.deed||journalData.gratitude||journalData.note)); }
+function renderJournalCard(){
+  const el=document.getElementById('journal-card-container');
+  if(!el)return;
+  if(todayJournalFilled()){
+    el.innerHTML=`<div class="journal-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <h2 style="font-size:15px;font-weight:600;margin:0;">📔 Jurnal Hari Ini</h2>
+        <button onclick="openJournalModal()" style="background:none;border:none;color:var(--c1);font-weight:600;cursor:pointer;font-family:inherit;font-size:14px;">Edit</button>
+      </div>
+      <div class="journal-entry" style="border-top:none;padding-top:8px;">
+        <div class="journal-entry-head"><span class="journal-entry-mood">${journalData.mood||'🙂'}</span><span>Perasaan hari ini</span></div>
+        ${journalData.deed?`<div class="journal-line">💛 <b>Kebaikan:</b> ${journalData.deed}</div>`:''}
+        ${journalData.gratitude?`<div class="journal-line">🙏 <b>Syukur:</b> ${journalData.gratitude}</div>`:''}
+        ${journalData.note?`<div class="journal-line">📝 ${journalData.note}</div>`:''}
+      </div>
+    </div>`;
+  } else {
+    el.innerHTML=`<div class="journal-card" style="text-align:center;">
+      <div style="font-size:32px;">📔</div>
+      <div style="font-size:15px;font-weight:600;margin-top:4px;">Jurnal Malam</div>
+      <div style="font-size:13px;color:var(--text2);margin:4px 0 12px;">Ceritakan bagaimana harimu sebelum tidur 🌙</div>
+      <button onclick="openJournalModal()" style="background:var(--c1);color:#fff;border:none;border-radius:12px;padding:11px 22px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;">✍️ Tulis Jurnal</button>
+    </div>`;
+  }
+}
+function renderJournalHistory(){
+  const el=document.getElementById('journal-history-container');
+  if(!el)return;
+  const entries=journalCache.filter(j=>j.data&&(j.data.mood||j.data.deed||j.data.gratitude||j.data.note)).slice(0,14);
+  if(!entries.length){el.innerHTML='';return;}
+  el.innerHTML=`<div class="card"><h2>📔 Jurnal Harian</h2>${entries.map(j=>{
+    const d=new Date(j.date+'T00:00:00');
+    return `<div class="journal-entry">
+      <div class="journal-entry-head"><span class="journal-entry-mood">${j.data.mood||'🙂'}</span><span style="font-weight:600;color:var(--text);">${formatDateShort(d)}</span></div>
+      ${j.data.deed?`<div class="journal-line">💛 ${j.data.deed}</div>`:''}
+      ${j.data.gratitude?`<div class="journal-line">🙏 ${j.data.gratitude}</div>`:''}
+      ${j.data.note?`<div class="journal-line">📝 ${j.data.note}</div>`:''}
+    </div>`;
+  }).join('')}</div>`;
+}
+function buildMoodPicker(){
+  document.getElementById('journal-moods').innerHTML=MOODS.map(m=>`<div class="mood-opt${_journalMood===m.e?' selected':''}" onclick="selectMood('${m.e}')">${m.e}<span class="mood-lbl">${m.l}</span></div>`).join('');
+}
+window.selectMood=function(e){_journalMood=e;buildMoodPicker();};
+window.openJournalModal=function(){
+  _journalMood=journalData.mood||'🙂';
+  document.getElementById('journal-deed').value=journalData.deed||'';
+  document.getElementById('journal-gratitude').value=journalData.gratitude||'';
+  document.getElementById('journal-note').value=journalData.note||'';
+  buildMoodPicker();
+  document.getElementById('journal-modal').classList.add('show');
+};
+window.closeJournalModal=function(){document.getElementById('journal-modal').classList.remove('show');};
+window.saveJournal=async function(){
+  journalData={
+    mood:_journalMood,
+    deed:document.getElementById('journal-deed').value.trim(),
+    gratitude:document.getElementById('journal-gratitude').value.trim(),
+    note:document.getElementById('journal-note').value.trim(),
+    ts:Date.now()
+  };
+  await saveJournalFS();
+  const idx=journalCache.findIndex(j=>j.date===todayKey());
+  if(idx>=0)journalCache[idx].data={...journalData};
+  else journalCache.unshift({date:todayKey(),data:{...journalData}});
+  closeJournalModal();
+  showToast('📔 Jurnal tersimpan!');
+  playDing();
+  renderJournalCard();
+};
+
+// ---- WISHLIST ----
+function buildWishIcons(){
+  document.getElementById('wish-icons').innerHTML=REWARD_ICONS.map(i=>`<span class="icon-opt${_wishIcon===i?' selected':''}" onclick="selectWishIcon('${i}')">${i}</span>`).join('');
+}
+window.selectWishIcon=function(i){_wishIcon=i;buildWishIcons();};
+window.openWishModal=function(){
+  _wishIcon='🎁';
+  document.getElementById('wish-label').value='';
+  buildWishIcons();
+  document.getElementById('wish-modal').classList.add('show');
+};
+window.closeWishModal=function(){document.getElementById('wish-modal').classList.remove('show');};
+window.submitWish=async function(){
+  const label=document.getElementById('wish-label').value.trim();
+  if(!label){document.getElementById('wish-label').focus();return;}
+  walletData.wishlist=walletData.wishlist||[];
+  walletData.wishlist.push({id:'w'+Date.now(),label,icon:_wishIcon,ts:Date.now()});
+  await saveWalletFS();
+  closeWishModal();
+  showToast('✨ Permintaan terkirim ke orang tua!');
+  renderRewards();
+};
+window.approveWish=async function(id){
+  const w=(walletData.wishlist||[]).find(x=>String(x.id)===String(id));
+  if(!w)return;
+  const costEl=document.getElementById('wishcost-'+id);
+  const cost=parseInt(costEl?costEl.value:'')||0;
+  if(cost<1){if(costEl)costEl.focus();showToast('Tentukan harga bintang dulu');return;}
+  if(!config.rewards)config.rewards=[];
+  config.rewards.push({id:'r'+Date.now(),icon:w.icon||'🎁',label:w.label,cost});
+  walletData.wishlist=(walletData.wishlist||[]).filter(x=>String(x.id)!==String(id));
+  await saveConfigFS();
+  await saveWalletFS();
+  showToast('✓ Hadiah ditambahkan ke toko ('+cost+'⭐)');
+  renderAdmin();
+};
+window.rejectWish=async function(id){
+  walletData.wishlist=(walletData.wishlist||[]).filter(x=>String(x.id)!==String(id));
+  await saveWalletFS();
+  showToast('Permintaan dihapus');
+  if(document.getElementById('screen-admin').classList.contains('active'))renderAdmin();
+  else renderRewards();
+};
 
 // ---- INIT ----
 onAuthStateChanged(auth,async(user)=>{
