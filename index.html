@@ -79,18 +79,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 /* PERIODS */
 .period-block{margin:12px 12px 0;}
-.period-header{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:14px 14px 0 0;color:#fff;font-weight:600;font-size:15px;cursor:pointer;user-select:none;}
+.period-header{display:flex;align-items:center;gap:10px;padding:14px 16px;border-radius:18px 18px 0 0;color:#fff;font-weight:700;font-size:16px;cursor:pointer;user-select:none;}
 .period-header .ph-progress{margin-left:auto;font-size:12px;opacity:.9;background:rgba(255,255,255,.25);padding:2px 10px;border-radius:12px;}
 .progress-bar-wrap{height:5px;background:rgba(0,0,0,.08);}
 .progress-bar{height:5px;transition:width .4s ease;}
-.period-tasks{background:var(--card);border:1px solid var(--border);border-top:none;border-radius:0 0 14px 14px;overflow:hidden;}
-.task-item{display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;-webkit-tap-highlight-color:transparent;}
+.period-tasks{background:var(--card);border:1px solid var(--border);border-top:none;border-radius:0 0 18px 18px;overflow:hidden;}
+.task-item{display:flex;align-items:center;gap:14px;padding:15px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;-webkit-tap-highlight-color:transparent;}
 .task-item:last-child{border-bottom:none;}
 .task-item:active{background:#f9f9f9;}
 .task-item.done .task-label{text-decoration:line-through;color:var(--text3);}
-.task-check{width:28px;height:28px;border-radius:50%;border:2px solid var(--border2);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:15px;transition:all .2s;color:#fff;}
+.task-check{width:36px;height:36px;border-radius:50%;border:2.5px solid var(--border2);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:19px;transition:all .2s;color:#fff;}
 .task-item.done .task-check{border-color:transparent;}
-.task-label{font-size:15px;flex:1;line-height:1.4;}
+.task-label{font-size:16px;font-weight:500;flex:1;line-height:1.35;}
 .task-pts{font-size:12px;color:var(--text3);white-space:nowrap;}
 .task-item.done .task-pts{color:var(--star);font-weight:700;}
 .empty-period{padding:16px;color:var(--text3);font-size:14px;text-align:center;}
@@ -114,7 +114,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .screen.active{display:block;}
 
 /* CARDS */
-.card{margin:12px 12px 0;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;}
+.card{margin:12px 12px 0;background:var(--card);border:1px solid var(--border);border-radius:18px;padding:16px;}
 .card h2{font-size:15px;font-weight:600;margin-bottom:14px;}
 .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
 .stat-box{background:var(--bg);border-radius:10px;padding:12px;text-align:center;}
@@ -420,11 +420,15 @@ body.dark[data-theme="sunset"]{--c1:#e8795a;--c1l:#2e1a12;--c1d:#f0a888;}
 body[data-theme="candy"]{--c1:#D4537E;--c1l:#FBEAF0;--c1d:#8f2a52;}
 body.dark[data-theme="candy"]{--c1:#e07299;--c1l:#2e1220;--c1d:#f0a0c0;}
 
-/* MASCOT */
-.mascot-card{margin:10px 12px 0;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;}
-.mascot-face{font-size:46px;line-height:1;flex-shrink:0;animation:bob 2.4s ease-in-out infinite;}
+/* HERO / MASCOT */
+.hero-card{margin:12px 12px 0;background:linear-gradient(135deg,var(--c1l),var(--card));border:2px solid var(--c1);border-radius:20px;padding:12px 14px;display:flex;align-items:center;gap:10px;box-shadow:0 3px 14px rgba(0,0,0,.08);}
+.hero-mascot{font-size:54px;line-height:1;flex-shrink:0;animation:bob 2.4s ease-in-out infinite;}
 @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
-.mascot-bubble{flex:1;background:var(--c1l);color:var(--c1d);border-radius:14px;padding:10px 14px;font-size:14px;font-weight:600;line-height:1.4;}
+.hero-text{flex:1;min-width:0;}
+.hero-bubble{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:8px 12px;font-size:14px;font-weight:700;color:var(--text);line-height:1.35;}
+.hero-sub{font-size:11px;color:var(--c1d);font-weight:700;margin-top:5px;padding-left:4px;}
+.hero-ring{flex-shrink:0;width:66px;height:66px;}
+.hero-ring svg{width:66px;height:66px;display:block;}
 
 /* AVATAR & THEME PICKER */
 .cust-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;}
@@ -632,7 +636,6 @@ body.dark[data-theme="candy"]{--c1:#e07299;--c1l:#2e1220;--c1d:#f0a0c0;}
     <div class="date-bar" id="date-bar"></div>
     <div id="mascot-container"></div>
     <div id="level-card-container"></div>
-    <div id="quote-card-container"></div>
     <div class="day-tabs" id="day-tabs"></div>
     <div id="periods-container"></div>
     <div id="quests-container"></div>
@@ -1089,7 +1092,6 @@ function renderHome(){
   document.getElementById('date-bar').textContent=formatDate(new Date());
   renderMascot();
   renderLevelCard('level-card-container');
-  renderQuote();
   renderDayTabs();
   renderPeriods();
   renderQuests();
@@ -2828,16 +2830,39 @@ function progressPctToday(){
   const done=req.filter(t=>todayData[String(t.id)]).length;
   return Math.round(done/req.length*100);
 }
+const MASCOT_LINES={
+  zero:['Hai! Ayo mulai petualangan hari ini! 🚀','Semangat! Tugas pertama menunggu! 💪','Ayo kumpulkan bintang sebanyak-banyaknya! ⭐','Pagi yang hebat dimulai dari niat baik! 🌅'],
+  low:['Keren! Jalan terus ya, jagoan! 😎','Mantap! Satu per satu pasti selesai! 🔥','Hebat! Kamu makin dekat ke bintang! 👍','Orang rajin selalu jadi juara! 🏅'],
+  half:['Sudah separuh jalan, mantap! 💪','Tinggal sedikit lagi, ayo gas! ⚡','Kamu hebat, teruskan ya! 🌟','Sabar dan rajin itu kekuatan super! 🦸'],
+  done:['Semua tugas wajib selesai! JUARA! 🏆','Luar biasa! Misi hari ini beres! 🎉','Kamu jagoan sejati! 🦸','Top! Istirahat yang cukup ya! 🌟']
+};
+function mascotLine(pct){
+  const bucket=pct>=100?'done':pct>=50?'half':pct>0?'low':'zero';
+  const arr=MASCOT_LINES[bucket];
+  return arr[new Date().getDate()%arr.length];
+}
 function renderMascot(){
   const el=document.getElementById('mascot-container'); if(!el)return;
   const av=walletData.avatar||'🦊';
   const pct=progressPctToday();
-  let msg;
-  if(pct>=100) msg='Semua tugas wajib selesai! Kamu hebat! 🎉';
-  else if(pct>=50) msg='Sudah lebih dari separuh, ayo lanjut! 💪';
-  else if(pct>0) msg='Bagus, teruskan ya! 😊';
-  else msg='Hai! Ayo mulai tugasmu hari ini! ✨';
-  el.innerHTML=`<div class="mascot-card"><div class="mascot-face">${av}</div><div class="mascot-bubble">${msg}</div></div>`;
+  const req=todayTasks().filter(t=>t.required!==false);
+  const done=req.filter(t=>todayData[String(t.id)]).length;
+  const C=2*Math.PI*34;
+  const off=(C*(1-pct/100)).toFixed(1);
+  el.innerHTML=`<div class="hero-card">
+    <div class="hero-mascot">${av}</div>
+    <div class="hero-text">
+      <div class="hero-bubble">${mascotLine(pct)}</div>
+      <div class="hero-sub">${pct>=100?'Tugas wajib: selesai semua! ✓':done+' / '+req.length+' tugas wajib hari ini'}</div>
+    </div>
+    <div class="hero-ring">
+      <svg viewBox="0 0 80 80">
+        <circle cx="40" cy="40" r="34" fill="none" stroke="var(--c1l)" stroke-width="9"/>
+        <circle cx="40" cy="40" r="34" fill="none" stroke="var(--c1)" stroke-width="9" stroke-linecap="round" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${off}" transform="rotate(-90 40 40)"/>
+        <text x="40" y="47" text-anchor="middle" font-size="20" font-weight="800" fill="var(--c1d)">${pct}%</text>
+      </svg>
+    </div>
+  </div>`;
 }
 function renderCustomize(){
   const el=document.getElementById('customize-container'); if(!el)return;
