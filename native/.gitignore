@@ -1,0 +1,7 @@
+node_modules/
+www/
+# The native android/ project is fully regenerable with `npx cap add android`,
+# so it is not committed. It stays on disk locally for building.
+android/
+*.apk
+*.keystore

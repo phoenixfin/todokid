@@ -703,7 +703,7 @@ body.dark[data-theme="candy"]{--c1:#e07299;--c1l:#2e1220;--c1d:#f0a0c0;}
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getAuth, signInWithPopup, signInWithCredential, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -719,6 +719,7 @@ const fbApp = initializeApp(firebaseConfig);
 const auth = getAuth(fbApp);
 const db = getFirestore(fbApp);
 const provider = new GoogleAuthProvider();
+const IS_NATIVE = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
 
 const PALETTE = ['#7F77DD','#1D9E75','#D85A30','#D4537E','#BA7517','#378ADD','#639922','#888780'];
 const ICONS = ['🌅','🎒','🏠','⛅','🌙','🍽️','📚','🏃','🎮','🛁','😴','🙏','💪','🎨','🎵'];
@@ -1065,7 +1066,18 @@ async function loadHistory(filterDays){
 window.loginGoogle=async function(){
   try{
     document.getElementById('login-screen').innerHTML='<div class="login-screen-inner"><div class="spinner"></div><p style="color:var(--text2)">Masuk...</p></div>';
-    await signInWithPopup(auth,provider);
+    if(IS_NATIVE){
+      // Native Google Sign-In (WebView blocks the web OAuth popup); feed the
+      // Google idToken into the same Firebase JS auth so the uid matches web.
+      const FA=window.Capacitor.Plugins.FirebaseAuthentication;
+      const result=await FA.signInWithGoogle();
+      const idToken=result&&result.credential&&result.credential.idToken;
+      if(!idToken) throw new Error('Gagal mendapat token Google');
+      const cred=GoogleAuthProvider.credential(idToken);
+      await signInWithCredential(auth,cred);
+    } else {
+      await signInWithPopup(auth,provider);
+    }
   }catch(e){
     console.error(e);
     document.getElementById('login-screen').innerHTML=`<div class="login-screen-inner"><p style="color:#c00;text-align:center;">Gagal masuk: ${e.message}</p><button class="google-btn" onclick="location.reload()" style="margin-top:16px;">Coba Lagi</button></div>`;
@@ -1716,6 +1728,7 @@ window.saveAdmin=async function(){
   const np=document.getElementById('newPinInput').value.trim();
   if(np&&/^\d{4}$/.test(np))config.pin=np;
   await saveConfigFS();
+  scheduleNativeReminders();
   showToast('✓ Tersimpan!');
   setTimeout(()=>switchScreen('home'),500);
 };
@@ -1834,6 +1847,42 @@ function scheduleAlarms(){
     runAutoPenalties();
     if(document.getElementById('screen-home').classList.contains('active')) renderHome();
   },60000);
+}
+
+// ---- NATIVE REMINDERS (Capacitor LocalNotifications; no-op on web) ----
+async function scheduleNativeReminders(){
+  if(!IS_NATIVE) return;
+  const LN=window.Capacitor.Plugins.LocalNotifications;
+  if(!LN) return;
+  try{
+    await LN.requestPermissions();
+    // Clear our previously scheduled reminders before rescheduling
+    const pending=await LN.getPending();
+    if(pending&&pending.notifications&&pending.notifications.length){
+      await LN.cancel({notifications:pending.notifications.map(n=>({id:n.id}))});
+    }
+    const list=[];
+    let idc=1000;
+    config.periods.forEach(p=>{
+      if(!p.alarm) return;
+      const[hh,mm]=p.alarm.split(':').map(Number);
+      let weekdays;
+      if(p.dayType==='weekday') weekdays=[2,3,4,5,6];      // Mon–Fri (1=Sun)
+      else if(p.dayType==='weekend') weekdays=[1,7];        // Sun, Sat
+      else weekdays=[null];                                 // every day
+      weekdays.forEach(wd=>{
+        const on={hour:hh,minute:mm};
+        if(wd!==null) on.weekday=wd;
+        list.push({
+          id:idc++,
+          title:(p.icon||'⏰')+' '+p.label,
+          body:'Waktunya '+p.label.toLowerCase()+' — yuk kerjakan tugasmu!',
+          schedule:{on,allowWhileIdle:true}
+        });
+      });
+    });
+    if(list.length) await LN.schedule({notifications:list});
+  }catch(e){ console.error('scheduleNativeReminders failed',e); }
 }
 
 function startClock(){
@@ -2923,6 +2972,7 @@ onAuthStateChanged(auth,async(user)=>{
     checkBadges(true);
     renderHome();
     scheduleAlarms();
+    scheduleNativeReminders();
     startClock();
     if(localStorage.getItem('focusMode')==='1') enterFocus();
   } else {

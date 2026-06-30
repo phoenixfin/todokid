@@ -1,0 +1,11 @@
+{
+  "appId": "com.todokid.app",
+  "appName": "Tugas Harianku",
+  "webDir": "www",
+  "plugins": {
+    "FirebaseAuthentication": {
+      "skipNativeAuth": false,
+      "providers": ["google.com"]
+    }
+  }
+}
