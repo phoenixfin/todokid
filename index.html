@@ -434,6 +434,7 @@ body.dark .streak-chip{background:#2e1a12;color:#e8795a;}
 
 <div id="app" style="display:none;">
   <div class="toast" id="toast"></div>
+  <canvas id="confetti-canvas" style="position:fixed;inset:0;pointer-events:none;z-index:700;display:none;"></canvas>
   <div class="sync-bar" id="sync-bar">⟳ Menyinkronkan...</div>
 
   <!-- PIN Overlay -->
@@ -770,7 +771,7 @@ function showCongrats(){
   document.getElementById('congrats-title').textContent=m.title;
   document.getElementById('congrats-sub').textContent=m.sub;
   document.getElementById('congrats-overlay').classList.add('show');
-  playDing();
+  celebrate();
 }
 window.closeCongrats=function(){document.getElementById('congrats-overlay').classList.remove('show');};
 
@@ -809,6 +810,7 @@ const DEFAULT_CONFIG = {
     {id:'pr3',marks:8,icon:'📵',consequence:'Tidak ada gadget besok'}
   ],
   penaltyCoinCost:15,
+  soundOn:true,
   autoPenalty:false,
   autoPenaltyMarks:1,
   penaltyDecay:false,
@@ -952,6 +954,7 @@ async function loadFromFirestore(){
   if(!Array.isArray(config.penaltyRules)) config.penaltyRules=JSON.parse(JSON.stringify(DEFAULT_CONFIG.penaltyRules));
   if(typeof config.penaltyCoinCost!=='number') config.penaltyCoinCost=DEFAULT_CONFIG.penaltyCoinCost;
   if(typeof config.journalReward!=='number') config.journalReward=DEFAULT_CONFIG.journalReward;
+  if(typeof config.soundOn!=='boolean') config.soundOn=DEFAULT_CONFIG.soundOn;
   if(typeof config.autoPenalty!=='boolean') config.autoPenalty=DEFAULT_CONFIG.autoPenalty;
   if(typeof config.autoPenaltyMarks!=='number') config.autoPenaltyMarks=DEFAULT_CONFIG.autoPenaltyMarks;
   if(typeof config.penaltyDecay!=='boolean') config.penaltyDecay=DEFAULT_CONFIG.penaltyDecay;
@@ -1125,7 +1128,7 @@ window.toggleTask=function(taskId,periodId){
   const isReq=t.required!==false;
   const starIcon=isReq?REQ_ICON:BONUS_ICON;
   if(todayData[key]){delete todayData[key];showToast('-'+t.pts+' '+starIcon+' dibatalkan');}
-  else{todayData[key]=t.pts;showToast('+'+t.pts+' '+starIcon+'!');playDing();}
+  else{todayData[key]=t.pts;showToast('+'+t.pts+' '+starIcon+'!');playDing(config.periods.findIndex(x=>x.id===periodId));}
   saveTodayFS();
   const idx=historyCache.findIndex(h=>h.date===todayKey());
   if(idx>=0)historyCache[idx].data={...todayData};
@@ -1328,6 +1331,10 @@ function renderAdmin(){
       <div class="admin-row"><label>Nama Anak</label><input type="text" id="childNameInput" style="font-size:14px;border:none;outline:none;text-align:right;background:transparent;color:var(--text);font-family:inherit;width:150px;" value="${config.childName||'Adik'}"></div>
       <div class="admin-row"><label>PIN Admin</label><input type="text" inputmode="numeric" maxlength="4" id="newPinInput" style="font-size:14px;border:none;outline:none;text-align:right;background:transparent;color:var(--text);font-family:inherit;width:100px;" placeholder="PIN baru (4 angka)"></div>
       <div class="admin-row"><label>Hadiah menulis jurnal (💎)</label><input type="number" min="0" value="${config.journalReward||0}" onchange="config.journalReward=parseInt(this.value)||0" class="ach-pts-input"></div>
+      <div class="admin-row">
+        <div><div style="font-size:14px;font-weight:600;">Suara &amp; efek</div><div style="font-size:11px;color:var(--text3);">Bunyi saat selesai tugas &amp; perayaan</div></div>
+        <label class="toggle"><input type="checkbox" ${config.soundOn!==false?'checked':''} onchange="setConfigFlag('soundOn',this.checked)"><span class="toggle-slider"></span></label>
+      </div>
       <div class="admin-row" style="background:${todayIsHoliday()?'#fff3f0':''};">
         <div>
           <div style="font-size:14px;font-weight:600;">Hari ini = Hari Libur</div>
@@ -1700,6 +1707,7 @@ window.importConfig=async function(event){
     if(!Array.isArray(config.penaltyRules)) config.penaltyRules=JSON.parse(JSON.stringify(DEFAULT_CONFIG.penaltyRules));
     if(typeof config.penaltyCoinCost!=='number') config.penaltyCoinCost=DEFAULT_CONFIG.penaltyCoinCost;
     if(typeof config.journalReward!=='number') config.journalReward=DEFAULT_CONFIG.journalReward;
+    if(typeof config.soundOn!=='boolean') config.soundOn=DEFAULT_CONFIG.soundOn;
     if(typeof config.autoPenalty!=='boolean') config.autoPenalty=DEFAULT_CONFIG.autoPenalty;
     if(typeof config.autoPenaltyMarks!=='number') config.autoPenaltyMarks=DEFAULT_CONFIG.autoPenaltyMarks;
     if(typeof config.penaltyDecay!=='boolean') config.penaltyDecay=DEFAULT_CONFIG.penaltyDecay;
@@ -1843,10 +1851,52 @@ function startClock(){
   tick();
   window._clockTimer=setInterval(tick,1000);
 }
-function playDing(){
+const CHIME_SCALES=[[523,659,784],[587,740,880],[494,622,740],[659,784,988],[440,554,659]];
+function soundOff(){ return config && config.soundOn===false; }
+function playDing(idx){
+  if(soundOff())return;
   try{const ctx=new(window.AudioContext||window.webkitAudioContext)();
-    [523,659,784].forEach((f,i)=>{const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.value=f;g.gain.setValueAtTime(.25,ctx.currentTime+i*.12);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+i*.12+.3);o.start(ctx.currentTime+i*.12);o.stop(ctx.currentTime+i*.12+.3);});}catch(e){}
+    const notes=CHIME_SCALES[((idx||0)%CHIME_SCALES.length+CHIME_SCALES.length)%CHIME_SCALES.length];
+    notes.forEach((f,i)=>{const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.value=f;g.gain.setValueAtTime(.25,ctx.currentTime+i*.12);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+i*.12+.3);o.start(ctx.currentTime+i*.12);o.stop(ctx.currentTime+i*.12+.3);});}catch(e){}
 }
+function playFanfare(){
+  if(soundOff())return;
+  try{const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    [523,659,784,1047,1319].forEach((f,i)=>{const o=ctx.createOscillator(),g=ctx.createGain();o.type='triangle';o.connect(g);g.connect(ctx.destination);o.frequency.value=f;const t=ctx.currentTime+i*.12;g.gain.setValueAtTime(.22,t);g.gain.exponentialRampToValueAtTime(.001,t+.45);o.start(t);o.stop(t+.45);});}catch(e){}
+}
+function launchConfetti(){
+  const canvas=document.getElementById('confetti-canvas');
+  if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  canvas.width=window.innerWidth; canvas.height=window.innerHeight;
+  canvas.style.display='block';
+  const colors=['#7F77DD','#1D9E75','#D85A30','#D4537E','#EF9F27','#4AA3DF'];
+  const parts=[];
+  for(let i=0;i<130;i++){
+    parts.push({x:canvas.width/2+(Math.random()-0.5)*140,y:canvas.height*0.32,
+      vx:(Math.random()-0.5)*9,vy:Math.random()*-9-3,g:0.22+Math.random()*0.16,
+      size:6+Math.random()*7,color:colors[Math.floor(Math.random()*colors.length)],
+      rot:Math.random()*360,vr:(Math.random()-0.5)*22});
+  }
+  let frame=0;
+  cancelAnimationFrame(window._confettiRAF);
+  function tick(){
+    frame++;
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    let alive=false;
+    parts.forEach(p=>{
+      p.vy+=p.g; p.x+=p.vx; p.y+=p.vy; p.rot+=p.vr;
+      if(p.y<canvas.height+24)alive=true;
+      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot*Math.PI/180);
+      ctx.globalAlpha=Math.max(0,1-frame/150); ctx.fillStyle=p.color;
+      ctx.fillRect(-p.size/2,-p.size/2,p.size,p.size*0.6); ctx.restore();
+    });
+    if(alive&&frame<150){window._confettiRAF=requestAnimationFrame(tick);}
+    else{ctx.clearRect(0,0,canvas.width,canvas.height);canvas.style.display='none';}
+  }
+  tick();
+}
+function celebrate(){ launchConfetti(); playFanfare(); }
 function playAlarm(){} // kept for compat, unused
 
 window.loadPastDayAdmin=function(dateStr){
@@ -2305,6 +2355,7 @@ function showRedeemCongrats(r){
   document.getElementById('congrats-title').textContent='Hadiah Ditukar! 🎉';
   document.getElementById('congrats-sub').textContent=`Selamat! Kamu menukar ${r.cost} bintang untuk "${r.label}". Nikmati hadiahmu, ya!`;
   document.getElementById('congrats-overlay').classList.add('show');
+  celebrate();
 }
 window.refundRedeem=async function(id){
   if(!confirm('Batalkan penukaran ini dan kembalikan bintangnya?'))return;
@@ -2622,11 +2673,11 @@ window.completeQuest=async function(id){
   walletData.credits.push({id:'c'+Date.now(),source:'quest',label:q.label,amount:q.reward||0,date:todayKey(),ts:Date.now()});
   await saveWalletFS();
   showToast('🎯 Misi selesai! +'+(q.reward||0)+' 💎');
-  playDing();
   document.getElementById('congrats-emoji').textContent=q.icon||'🎯';
   document.getElementById('congrats-title').textContent='Misi Selesai! 🎉';
   document.getElementById('congrats-sub').textContent=`Kamu menyelesaikan "${q.label}" dan mendapat ${q.reward||0} 💎!`;
   document.getElementById('congrats-overlay').classList.add('show');
+  celebrate();
   renderHome();
   checkBadges(false);
 };
@@ -2720,7 +2771,7 @@ function checkBadges(silent){
       document.getElementById('congrats-title').textContent='Lencana Baru! '+b.icon;
       document.getElementById('congrats-sub').textContent=`Kamu mendapat lencana "${b.title}" — ${b.desc}!`;
       document.getElementById('congrats-overlay').classList.add('show');
-      playDing();
+      celebrate();
     }
   }
   return newly;
