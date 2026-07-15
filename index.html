@@ -880,7 +880,7 @@ let pinBuffer = '';
 let userId = null;
 let pmSelectedColor = PALETTE[0];
 let pmSelectedIcon = ICONS[0];
-let walletData = { redemptions:[], penalties:[], wishlist:[], credits:[], questLog:[], badges:[] };
+let walletData = { redemptions:[], penalties:[], wishlist:[], credits:[], questLog:[], badges:[], resets:[] };
 let _pendingRedeem = null;
 let journalData = {};
 let journalCache = [];
@@ -1018,6 +1018,7 @@ async function loadFromFirestore(){
   if(!Array.isArray(walletData.credits)) walletData.credits=[];
   if(!Array.isArray(walletData.questLog)) walletData.questLog=[];
   if(!Array.isArray(walletData.badges)) walletData.badges=[];
+  if(!Array.isArray(walletData.resets)) walletData.resets=[];
   const jDoc=await getDoc(doc(db,'users',userId,'journals',todayKey()));
   if(jDoc.exists()) journalData=jDoc.data();
   await loadJournals();
@@ -1462,6 +1463,10 @@ function renderAdmin(){
           </div>`).join('')}
       </div>
       <button class="add-task-btn" onclick="addReward()">＋ Tambah Hadiah</button>
+      <div style="padding:10px 16px 4px;font-size:12px;color:var(--text3);border-top:1px solid var(--border);">Saldo bintang anak saat ini: <b>${currentBalance()} ⭐</b>. Reset mengembalikan saldo ke 0 tanpa mengubah Level, XP, maupun riwayat checklist.</div>
+      <div style="padding:8px 16px 14px;">
+        <button onclick="resetCoins()" style="width:100%;padding:10px;background:var(--c3l);color:var(--c3);border:1px solid var(--c3);border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;">💰 Reset Saldo Bintang ke 0</button>
+      </div>
     </div>
     <div class="admin-section">
       <div class="admin-section-header">✨ Permintaan Hadiah (Wishlist)</div>
@@ -2311,7 +2316,8 @@ function redemptionsTotal(){ return (walletData.redemptions||[]).reduce((a,r)=>a
 function bonusCredits(){ return (walletData.credits||[]).reduce((a,c)=>a+(c.amount||0),0); }
 function todayCreditsTotal(){ return (walletData.credits||[]).filter(c=>c.date===todayKey()).reduce((a,c)=>a+(c.amount||0),0); }
 function lifetimeEarned(){ return totalStarsAll()+bonusCredits(); }
-function currentBalance(){ return Math.max(0, lifetimeEarned()-redemptionsTotal()); }
+function resetsTotal(){ return (walletData.resets||[]).reduce((a,r)=>a+(r.amount||0),0); }
+function currentBalance(){ return Math.max(0, lifetimeEarned()-redemptionsTotal()-resetsTotal()); }
 function redeemedCount(rewardId){ return (walletData.redemptions||[]).filter(r=>r.rewardId===rewardId).length; }
 function rewardSoldOut(r){ return r.stock!=null && redeemedCount(r.id)>=r.stock; }
 function redeemedThisWeek(rewardId){
@@ -2516,6 +2522,16 @@ window.forgivePenalty=async function(id){
   walletData.penalties=(walletData.penalties||[]).filter(p=>String(p.id)!==String(id));
   await saveWalletFS();
   showToast('Penalti dihapus');
+  renderAdmin();
+};
+window.resetCoins=async function(){
+  const bal=currentBalance();
+  if(bal<=0){showToast('Saldo bintang sudah 0');return;}
+  if(!confirm('Reset saldo bintang anak dari '+bal+' ⭐ menjadi 0? Level, XP, dan riwayat checklist tidak berubah.'))return;
+  if(!Array.isArray(walletData.resets)) walletData.resets=[];
+  walletData.resets.push({id:'rs'+Date.now(),amount:bal,date:todayKey(),ts:Date.now()});
+  await saveWalletFS();
+  showToast('✓ Saldo bintang direset ke 0');
   renderAdmin();
 };
 window.clearPenalties=async function(){
