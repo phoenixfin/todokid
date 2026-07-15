@@ -564,6 +564,21 @@ body.dark[data-theme="candy"]{--c1:#e07299;--c1l:#2e1220;--c1d:#f0a0c0;}
     </div>
   </div>
 
+  <!-- Parent Approval Modal -->
+  <div class="modal-overlay" id="approve-modal">
+    <div class="modal-box">
+      <h3>Persetujuan Orang Tua</h3>
+      <div id="approve-info"></div>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:12px;text-align:center;">Masukkan PIN orang tua untuk menyetujui centang ini.</p>
+      <input type="password" inputmode="numeric" maxlength="4" id="approve-pin" class="redeem-pin-input" placeholder="••••" onkeydown="if(event.key==='Enter')confirmApprove()">
+      <div id="approve-error" style="color:#E24B4A;font-size:13px;text-align:center;height:18px;margin-top:8px;"></div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeApproveModal()">Batal</button>
+        <button class="btn-confirm" onclick="confirmApprove()">✓ Setujui</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Journal Modal -->
   <div class="modal-overlay" id="journal-modal">
     <div class="modal-box">
@@ -847,6 +862,7 @@ const DEFAULT_CONFIG = {
   ],
   penaltyCoinCost:15,
   soundOn:true,
+  approvalMode:true,
   autoPenalty:false,
   autoPenaltyMarks:1,
   penaltyDecay:false,
@@ -928,6 +944,12 @@ function periodsForDay(d) {
 function allTasksForDay(d) { return periodsForDay(d).flatMap(p=>p.tasks); }
 function todayTasks() { return allTasksForDay(new Date()); }
 function todayStars() { return Object.values(todayData).reduce((a,v)=>a+(typeof v==='number'?v:0),0); }
+// ---- PARENT APPROVAL (pending checks live in todayData._pend until approved; only approved values count as stars) ----
+function pendMap(){ if(!todayData._pend||typeof todayData._pend!=='object'||Array.isArray(todayData._pend)) todayData._pend={}; return todayData._pend; }
+function apprMap(){ if(!todayData._appr||typeof todayData._appr!=='object'||Array.isArray(todayData._appr)) todayData._appr={}; return todayData._appr; }
+function isPending(taskId){ return !!(todayData._pend&&todayData._pend[String(taskId)]); }
+function periodPendingTasks(p){ return p.tasks.filter(t=>isPending(t.id)); }
+function periodSubmitted(pid){ return !!(todayData._appr&&todayData._appr[pid]==='pending'); }
 function starsOfType(data, tasks, required) {
   return tasks.filter(t=>t.required!==false===required&&data[String(t.id)]).reduce((a,t)=>a+t.pts,0);
 }
@@ -1003,6 +1025,7 @@ async function loadFromFirestore(){
   if(typeof config.penaltyCoinCost!=='number') config.penaltyCoinCost=DEFAULT_CONFIG.penaltyCoinCost;
   if(typeof config.journalReward!=='number') config.journalReward=DEFAULT_CONFIG.journalReward;
   if(typeof config.soundOn!=='boolean') config.soundOn=DEFAULT_CONFIG.soundOn;
+  if(typeof config.approvalMode!=='boolean') config.approvalMode=DEFAULT_CONFIG.approvalMode;
   if(typeof config.autoPenalty!=='boolean') config.autoPenalty=DEFAULT_CONFIG.autoPenalty;
   if(typeof config.autoPenaltyMarks!=='number') config.autoPenaltyMarks=DEFAULT_CONFIG.autoPenaltyMarks;
   if(typeof config.penaltyDecay!=='boolean') config.penaltyDecay=DEFAULT_CONFIG.penaltyDecay;
@@ -1125,7 +1148,7 @@ function renderPeriods(){
     const color=p.color||PALETTE[pi%PALETTE.length];
     const locked=isLocked(p);
     const overridden=isOverridden(p);
-    const done=p.tasks.filter(t=>todayData[t.id]).length;
+    const done=p.tasks.filter(t=>todayData[t.id]||isPending(t.id)).length;
     const total=p.tasks.length;
     const pct=total?Math.round(done/total*100):0;
     const collapsed=sessionStorage.getItem('col_'+p.id)==='1';
@@ -1135,20 +1158,35 @@ function renderPeriods(){
       :p.tasks.map(t=>{
         const isReq=t.required!==false;
         const isDone=!!todayData[String(t.id)];
+        const isPend=!isDone&&isPending(t.id);
         const starIcon=isReq?REQ_ICON:BONUS_ICON;
         const starClass=isReq?'star-gold':'star-silver';
-        const clickable=!locked||isDone;
+        const clickable=!locked||isDone||isPend;
         const st=taskStreak(t.id);
         const streakChip=st>=3?`<span class="streak-chip">🔥${st}</span>`:'';
-        return `<div class="task-item ${isDone?'done':''} ${isReq&&!locked?'required':''}" style="${locked&&!isDone?'opacity:.45;':''}${clickable?'':'pointer-events:none;'}" onclick="${clickable?`toggleTask('${t.id}','${p.id}')`:''}" >
-          <div class="task-check" style="${isDone?'background:'+color+';border-color:'+color:''}${locked&&!isDone?'border-color:#ccc':''}">
-            ${isDone?'✓':locked?'🔒':''}
+        return `<div class="task-item ${isDone?'done':''} ${isReq&&!locked?'required':''}" style="${locked&&!isDone&&!isPend?'opacity:.45;':''}${clickable?'':'pointer-events:none;'}" onclick="${clickable?`toggleTask('${t.id}','${p.id}')`:''}" >
+          <div class="task-check" style="${isDone?'background:'+color+';border-color:'+color:isPend?'background:#FFB300;border-color:#FFB300;':''}${locked&&!isDone&&!isPend?'border-color:#ccc':''}">
+            ${isDone?'✓':isPend?'✋':locked?'🔒':''}
           </div>
           <span class="task-label">${t.label}</span>
           ${streakChip}
-          <span class="task-pts ${isDone?starClass:''}">${isDone?'+':''}${t.pts} ${starIcon}</span>
+          <span class="task-pts ${isDone?starClass:''}" ${isPend?'style="color:#B26A00;"':''}>${isDone||isPend?'+':''}${t.pts} ${isPend?'⏳':starIcon}</span>
         </div>`;
       }).join('');
+
+    const pendTasks=periodPendingTasks(p);
+    let approvalHtml='';
+    if(pendTasks.length){
+      const pendStars=pendTasks.reduce((a,t)=>a+t.pts,0);
+      approvalHtml=periodSubmitted(p.id)
+        ?`<div style="padding:4px 14px 14px;display:flex;flex-direction:column;gap:8px;">
+            <div style="font-size:13px;color:#B26A00;background:#FFF6E5;border:1px solid #FFD794;border-radius:10px;padding:9px 12px;text-align:center;font-weight:600;">⏳ Menunggu persetujuan orang tua (${pendTasks.length} tugas · ${pendStars} bintang)</div>
+            <button onclick="openApprove('${p.id}')" style="width:100%;padding:10px;background:var(--c2);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">🔑 Orang Tua: Setujui di sini</button>
+          </div>`
+        :`<div style="padding:4px 14px 14px;">
+            <button onclick="submitPeriod('${p.id}')" style="width:100%;padding:11px;background:${color};color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">🙋 Ajukan ke Orang Tua (${pendTasks.length} tugas)</button>
+          </div>`;
+    }
 
     const deadlineBadge=p.alarm
       ?locked
@@ -1167,7 +1205,7 @@ function renderPeriods(){
       </div>
       <div class="progress-bar-wrap"><div class="progress-bar" style="width:${pct}%;background:${color}"></div></div>
       ${deadlineBadge}
-      <div class="period-tasks" id="pt-${p.id}" style="display:${collapsed?'none':'block'}">${tasksHtml}</div>`;
+      <div class="period-tasks" id="pt-${p.id}" style="display:${collapsed?'none':'block'}">${tasksHtml}${approvalHtml}</div>`;
     cont.appendChild(block);
   });
 }
@@ -1187,7 +1225,10 @@ window.toggleTask=function(taskId,periodId){
   const key=String(t.id);
   const isReq=t.required!==false;
   const starIcon=isReq?REQ_ICON:BONUS_ICON;
+  const pend=pendMap();
   if(todayData[key]){delete todayData[key];showToast('-'+t.pts+' '+starIcon+' dibatalkan');}
+  else if(pend[key]){delete pend[key];showToast('Centang dibatalkan');}
+  else if(config.approvalMode!==false){pend[key]=t.pts;showToast('✋ Centang dicatat — ajukan ke orang tua ya!');playDing(config.periods.findIndex(x=>x.id===periodId));}
   else{todayData[key]=t.pts;showToast('+'+t.pts+' '+starIcon+'!');playDing(config.periods.findIndex(x=>x.id===periodId));}
   saveTodayFS();
   const idx=historyCache.findIndex(h=>h.date===todayKey());
@@ -1196,6 +1237,64 @@ window.toggleTask=function(taskId,periodId){
   renderHome();
   if(document.getElementById('focus-overlay').classList.contains('show'))renderFocus();
   checkBadges(false);
+  const required=todayTasks().filter(t2=>t2.required!==false);
+  if(required.length>0&&required.every(t2=>todayData[String(t2.id)]))
+    setTimeout(()=>showCongrats(),400);
+};
+
+// ---- PARENT APPROVAL FLOW ----
+let _approvePeriodId=null;
+window.submitPeriod=async function(pid){
+  const p=config.periods.find(x=>x.id===pid);
+  if(!p)return;
+  if(!periodPendingTasks(p).length){showToast('Centang dulu tugasnya ya!');return;}
+  apprMap()[pid]='pending';
+  await saveTodayFS();
+  renderHome();
+  showToast('🙋 Sudah diajukan! Minta orang tua menyetujui ya');
+};
+window.openApprove=function(pid){
+  const p=config.periods.find(x=>x.id===pid);
+  if(!p)return;
+  const list=periodPendingTasks(p);
+  if(!list.length){showToast('Tidak ada yang perlu disetujui');return;}
+  _approvePeriodId=pid;
+  document.getElementById('approve-info').innerHTML=
+    `<div style="margin-bottom:12px;">
+      <div style="text-align:center;font-weight:700;font-size:15px;margin-bottom:8px;">${p.icon} ${p.label}</div>
+      ${list.map(t=>`<div style="display:flex;justify-content:space-between;gap:8px;font-size:14px;padding:6px 2px;border-bottom:1px solid var(--border);"><span>${t.label}</span><span style="font-weight:700;white-space:nowrap;">+${t.pts} ${t.required!==false?REQ_ICON:BONUS_ICON}</span></div>`).join('')}
+    </div>`;
+  document.getElementById('approve-pin').value='';
+  document.getElementById('approve-error').textContent='';
+  document.getElementById('approve-modal').classList.add('show');
+  setTimeout(()=>document.getElementById('approve-pin').focus(),120);
+};
+window.closeApproveModal=function(){
+  document.getElementById('approve-modal').classList.remove('show');
+  _approvePeriodId=null;
+};
+window.confirmApprove=async function(){
+  if(!_approvePeriodId)return;
+  const pin=document.getElementById('approve-pin').value.trim();
+  if(pin!==config.pin){document.getElementById('approve-error').textContent='PIN salah';return;}
+  const p=config.periods.find(x=>x.id===_approvePeriodId);
+  if(!p){closeApproveModal();return;}
+  const pend=pendMap();
+  let stars=0;
+  p.tasks.forEach(t=>{
+    const k=String(t.id);
+    if(pend[k]){todayData[k]=pend[k];stars+=pend[k];delete pend[k];}
+  });
+  if(todayData._appr)delete todayData._appr[p.id];
+  await saveTodayFS();
+  const idx=historyCache.findIndex(h=>h.date===todayKey());
+  if(idx>=0)historyCache[idx].data={...todayData};
+  else historyCache.unshift({date:todayKey(),data:{...todayData}});
+  closeApproveModal();
+  playDing();
+  renderHome();
+  checkBadges(false);
+  showToast('✓ Disetujui! +'+stars+' bintang untuk '+(config.childName||'Adik'));
   const required=todayTasks().filter(t2=>t2.required!==false);
   if(required.length>0&&required.every(t2=>todayData[String(t2.id)]))
     setTimeout(()=>showCongrats(),400);
@@ -1395,6 +1494,10 @@ function renderAdmin(){
       <div class="admin-row">
         <div><div style="font-size:14px;font-weight:600;">Suara &amp; efek</div><div style="font-size:11px;color:var(--text3);">Bunyi saat selesai tugas &amp; perayaan</div></div>
         <label class="toggle"><input type="checkbox" ${config.soundOn!==false?'checked':''} onchange="setConfigFlag('soundOn',this.checked)"><span class="toggle-slider"></span></label>
+      </div>
+      <div class="admin-row">
+        <div><div style="font-size:14px;font-weight:600;">Persetujuan orang tua</div><div style="font-size:11px;color:var(--text3);">Centang anak harus diajukan &amp; disetujui (PIN) sebelum bintang masuk</div></div>
+        <label class="toggle"><input type="checkbox" ${config.approvalMode!==false?'checked':''} onchange="setConfigFlag('approvalMode',this.checked)"><span class="toggle-slider"></span></label>
       </div>
       <div class="admin-row" style="background:${todayIsHoliday()?'#fff3f0':''};">
         <div>
@@ -1774,6 +1877,7 @@ window.importConfig=async function(event){
     if(typeof config.penaltyCoinCost!=='number') config.penaltyCoinCost=DEFAULT_CONFIG.penaltyCoinCost;
     if(typeof config.journalReward!=='number') config.journalReward=DEFAULT_CONFIG.journalReward;
     if(typeof config.soundOn!=='boolean') config.soundOn=DEFAULT_CONFIG.soundOn;
+    if(typeof config.approvalMode!=='boolean') config.approvalMode=DEFAULT_CONFIG.approvalMode;
     if(typeof config.autoPenalty!=='boolean') config.autoPenalty=DEFAULT_CONFIG.autoPenalty;
     if(typeof config.autoPenaltyMarks!=='number') config.autoPenaltyMarks=DEFAULT_CONFIG.autoPenaltyMarks;
     if(typeof config.penaltyDecay!=='boolean') config.penaltyDecay=DEFAULT_CONFIG.penaltyDecay;
@@ -2230,7 +2334,7 @@ function currentFocusPeriod(){
   const visible=config.periods.filter(p=>p.dayType==='all'||p.dayType===dt);
   if(!visible.length) return null;
   const withAlarm=visible.filter(p=>p.alarm).slice().sort(byAlarmAsc);
-  if(!withAlarm.length) return visible.find(p=>p.tasks.some(t=>!todayData[String(t.id)]))||visible[0];
+  if(!withAlarm.length) return visible.find(p=>p.tasks.some(t=>!todayData[String(t.id)]&&!isPending(t.id)))||visible[0];
   const upcoming=withAlarm.find(p=>!isPastDeadline(p));
   return upcoming||withAlarm[withAlarm.length-1];
 }
@@ -2279,16 +2383,17 @@ function renderFocus(){
   const tasksHtml=p.tasks.length
     ? p.tasks.map(t=>{
         const isDone=!!todayData[String(t.id)];
+        const isPend=!isDone&&isPending(t.id);
         const isReq=t.required!==false;
-        const clickable=!locked||isDone;
-        return `<div class="focus-task ${isDone?'done':''}" ${clickable?`onclick="toggleTask('${t.id}','${p.id}')"`:''} style="${clickable?'':'opacity:.5;pointer-events:none;'}">
-          <div class="focus-check" style="${isDone?'background:'+color+';border-color:'+color:''}">${isDone?'✓':locked?'🔒':''}</div>
+        const clickable=!locked||isDone||isPend;
+        return `<div class="focus-task ${isDone||isPend?'done':''}" ${clickable?`onclick="toggleTask('${t.id}','${p.id}')"`:''} style="${clickable?'':'opacity:.5;pointer-events:none;'}">
+          <div class="focus-check" style="${isDone?'background:'+color+';border-color:'+color:isPend?'background:#FFB300;border-color:#FFB300;':''}">${isDone?'✓':isPend?'✋':locked?'🔒':''}</div>
           <span class="focus-task-label">${t.label}</span>
-          <span style="font-size:16px;">${isReq?REQ_ICON:BONUS_ICON}</span>
+          <span style="font-size:16px;">${isPend?'⏳':isReq?REQ_ICON:BONUS_ICON}</span>
         </div>`;
       }).join('')
     : '<div class="focus-empty">Belum ada tugas di periode ini</div>';
-  const doneN=p.tasks.filter(t=>todayData[String(t.id)]).length;
+  const doneN=p.tasks.filter(t=>todayData[String(t.id)]||isPending(t.id)).length;
   body.innerHTML=`<div class="focus-period">
     <div class="focus-period-head" style="background:${color}"><span>${p.icon}</span><span style="flex:1;">${p.label}</span><span style="font-size:14px;opacity:.92;">${doneN}/${p.tasks.length}</span></div>
     ${tasksHtml}
@@ -2571,7 +2676,7 @@ function runAutoPenalties(){
     if(!isLocked(p))return; // only after deadline passes and not unlocked by admin
     p.tasks.forEach(t=>{
       if(t.required===false)return;
-      if(todayData[String(t.id)])return;
+      if(todayData[String(t.id)]||isPending(t.id))return;
       const exists=(walletData.penalties||[]).some(x=>x.auto&&String(x.taskId)===String(t.id)&&x.date===today);
       if(exists)return;
       walletData.penalties=walletData.penalties||[];
