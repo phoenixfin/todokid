@@ -313,6 +313,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .level-next{font-size:11px;opacity:.92;margin-top:6px;}
 
 /* REWARDS */
+.reset-btn{width:100%;padding:11px 14px;background:var(--bg);color:var(--text);border:1px solid var(--border2);border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;text-align:left;}
+.reset-btn span{display:block;font-size:11px;font-weight:500;color:var(--text3);margin-top:2px;}
+.reset-btn.danger{background:#FDECEA;color:#B3261E;border-color:#E24B4A;}
+.reset-btn.danger span{color:#B3261E;opacity:.75;}
+body.dark .reset-btn.danger{background:#3A1D1B;color:#FF9A93;border-color:#8E2F2A;}
+body.dark .reset-btn.danger span{color:#FF9A93;}
+.ex-step{width:28px;height:28px;border-radius:8px;border:1px solid var(--border2);background:var(--bg);color:var(--text);font-size:16px;font-weight:700;line-height:1;cursor:pointer;font-family:inherit;}
+.ex-step:active{background:var(--border);}
 .balance-hero{margin:12px 12px 0;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;text-align:center;}
 .balance-num{font-size:42px;font-weight:800;color:var(--star);line-height:1;}
 .balance-lbl{font-size:13px;color:var(--text2);margin-top:6px;}
@@ -623,8 +631,7 @@ body.dark[data-theme="candy"]{--c1:#e07299;--c1l:#2e1220;--c1d:#f0a0c0;}
         <h1 id="greeting">Hai! 👋</h1>
       </div>
       <div class="star-counts">
-      <div class="star-pill">⭐ <span id="star-gold-display">0</span></div>
-      <div class="star-pill">💎 <span id="star-silver-display">0</span></div>
+      <div id="wallet-pills" style="display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end;"></div>
       <button onclick="enterFocus()" id="focus-btn" style="background:rgba(255,255,255,.2);border:none;border-radius:50%;width:32px;height:32px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;" title="Mode Fokus (jam besar)">⏰</button>
       <button onclick="toggleDarkMode()" id="dark-mode-btn" style="background:rgba(255,255,255,.2);border:none;border-radius:50%;width:32px;height:32px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;" title="Mode gelap/terang">🌙</button>
     </div>
@@ -650,8 +657,8 @@ body.dark[data-theme="candy"]{--c1:#e07299;--c1l:#2e1220;--c1d:#f0a0c0;}
       <div class="stat-grid">
         <div class="stat-box"><div class="stat-val" id="s-done">0</div><div class="stat-lbl">tugas selesai</div></div>
         <div class="stat-box"><div class="stat-val" id="s-total">0</div><div class="stat-lbl">total tugas</div></div>
-        <div class="stat-box"><div class="stat-val star-gold" id="s-gold">0 ⭐</div><div class="stat-lbl">bintang wajib</div></div>
-        <div class="stat-box"><div class="stat-val star-silver" id="s-silver">0 💎</div><div class="stat-lbl">permata bonus</div></div>
+        <div class="stat-box"><div class="stat-val star-gold" id="s-gold">0</div><div class="stat-lbl">poin tugas wajib</div></div>
+        <div class="stat-box"><div class="stat-val star-silver" id="s-silver">0</div><div class="stat-lbl">poin tugas bonus</div></div>
       </div>
       <div class="streak-box">
         <div class="streak-num" id="s-streak">0</div>
@@ -661,8 +668,8 @@ body.dark[data-theme="candy"]{--c1:#e07299;--c1l:#2e1220;--c1d:#f0a0c0;}
     <div class="card">
       <h2>Total bintang terkumpul</h2>
       <div style="display:flex;justify-content:center;gap:24px;padding:8px 0;">
-        <div style="text-align:center;"><div style="font-size:32px;font-weight:700;color:#EF9F27;" id="s-total-gold">0 ⭐</div><div style="font-size:12px;color:var(--text2);margin-top:2px;">Wajib</div></div>
-        <div style="text-align:center;"><div style="font-size:32px;font-weight:700;color:#4AA3DF;" id="s-total-silver">0 💎</div><div style="font-size:12px;color:var(--text2);margin-top:2px;">Bonus</div></div>
+        <div style="text-align:center;"><div style="font-size:32px;font-weight:700;color:#EF9F27;" id="s-total-gold">0</div><div style="font-size:12px;color:var(--text2);margin-top:2px;">Wajib</div></div>
+        <div style="text-align:center;"><div style="font-size:32px;font-weight:700;color:#4AA3DF;" id="s-total-silver">0</div><div style="font-size:12px;color:var(--text2);margin-top:2px;">Bonus</div></div>
       </div>
     </div>
     <div id="badges-container"></div>
@@ -820,13 +827,20 @@ const DEFAULT_CONFIG = {
     {id:3,icon:'🥇',title:'Juara Minggu Ini',desc:'Kumpulkan 150 bintang dalam seminggu',target:150},
     {id:4,icon:'🏆',title:'Super Adik',desc:'Kumpulkan 200 bintang dalam seminggu',target:200}
   ],
+  // Mata uang. rate = nilai dalam satuan dasar (currency pertama).
+  // Default: 1⭐ = 1💎, dan 1🌙 = 5⭐ (satu item setara 5 item lain).
+  currencies:[
+    {id:'star',icon:'⭐',name:'Bintang',rate:1},
+    {id:'gem', icon:'💎',name:'Permata',rate:1},
+    {id:'moon',icon:'🌙',name:'Bulan',rate:5}
+  ],
   rewards:[
-    {id:'r1',icon:'📺',label:'Nonton TV 30 menit',cost:30},
-    {id:'r2',icon:'🎮',label:'Main game 30 menit',cost:40},
-    {id:'r3',icon:'🍦',label:'Es krim',cost:60},
-    {id:'r4',icon:'🍕',label:'Pilih menu makan malam',cost:80},
-    {id:'r5',icon:'🧸',label:'Mainan kecil',cost:150},
-    {id:'r6',icon:'🎡',label:'Jalan-jalan ke taman',cost:200}
+    {id:'r1',icon:'📺',label:'Nonton TV 30 menit',cost:30,cur:'star'},
+    {id:'r2',icon:'🎮',label:'Main game 30 menit',cost:40,cur:'star'},
+    {id:'r3',icon:'🍦',label:'Es krim',cost:60,cur:'star'},
+    {id:'r4',icon:'🍕',label:'Pilih menu makan malam',cost:80,cur:'star'},
+    {id:'r5',icon:'🧸',label:'Mainan kecil',cost:150,cur:'star'},
+    {id:'r6',icon:'🎡',label:'Jalan-jalan ke taman',cost:40,cur:'moon'}
   ],
   levels:[
     {minXP:0,icon:'🌱',title:'Tunas Kecil'},
@@ -880,7 +894,7 @@ let pinBuffer = '';
 let userId = null;
 let pmSelectedColor = PALETTE[0];
 let pmSelectedIcon = ICONS[0];
-let walletData = { redemptions:[], penalties:[], wishlist:[], credits:[], questLog:[], badges:[] };
+let walletData = { redemptions:[], penalties:[], wishlist:[], credits:[], questLog:[], badges:[], exchanges:[], reset:{xp:0,balances:{}} };
 let _pendingRedeem = null;
 let journalData = {};
 let journalCache = [];
@@ -888,6 +902,7 @@ let _journalMood = '🙂';
 let _wishIcon = '🎁';
 const REWARD_ICONS = ['🎁','📺','🎮','🍦','🧸','🎡','🍕','🍫','📚','🚲','🎨','⚽','🎬','🛍️','💰','🏊','🎢','🐶'];
 const LEVEL_ICONS = ['🌱','🧭','🦁','⭐','💪','🛡️','🦸','🏆','🌟','👑','🚀','🥇','🔥','💎'];
+const CURRENCY_ICONS = ['⭐','💎','🌙','🪙','🏅','🔷','🍀','☀️','🔥','🌈','🧿','🎫','🥇','❤️','🦴','🐚'];
 const REQ_ICON = '⭐';    // bintang wajib (required)
 const BONUS_ICON = '💎';  // permata bonus (optional/extra)
 const MOODS = [{e:'😄',l:'Senang'},{e:'🙂',l:'Baik'},{e:'😐',l:'Biasa'},{e:'😟',l:'Sedih'},{e:'😢',l:'Kecewa'}];
@@ -997,6 +1012,7 @@ async function loadFromFirestore(){
   const cfgDoc=await getDoc(doc(db,'users',userId,'data','config'));
   if(cfgDoc.exists()){ config=cfgDoc.data(); window.config=config; }
   // Seed newer config sections for existing users
+  if(!Array.isArray(config.currencies)||!config.currencies.length) config.currencies=JSON.parse(JSON.stringify(DEFAULT_CONFIG.currencies));
   if(!Array.isArray(config.rewards)) config.rewards=JSON.parse(JSON.stringify(DEFAULT_CONFIG.rewards));
   if(!Array.isArray(config.levels)) config.levels=JSON.parse(JSON.stringify(DEFAULT_CONFIG.levels));
   if(!Array.isArray(config.penaltyRules)) config.penaltyRules=JSON.parse(JSON.stringify(DEFAULT_CONFIG.penaltyRules));
@@ -1018,6 +1034,10 @@ async function loadFromFirestore(){
   if(!Array.isArray(walletData.credits)) walletData.credits=[];
   if(!Array.isArray(walletData.questLog)) walletData.questLog=[];
   if(!Array.isArray(walletData.badges)) walletData.badges=[];
+  if(!Array.isArray(walletData.exchanges)) walletData.exchanges=[];
+  if(!walletData.reset||typeof walletData.reset!=='object') walletData.reset={xp:0,balances:{}};
+  if(typeof walletData.reset.xp!=='number') walletData.reset.xp=0;
+  if(!walletData.reset.balances||typeof walletData.reset.balances!=='object') walletData.reset.balances={};
   const jDoc=await getDoc(doc(db,'users',userId,'journals',todayKey()));
   if(jDoc.exists()) journalData=jDoc.data();
   await loadJournals();
@@ -1099,8 +1119,9 @@ function renderHome(){
   const h=new Date().getHours();
   const gr=h<11?'Selamat pagi':h<15?'Selamat siang':h<18?'Selamat sore':'Selamat malam';
   document.getElementById('greeting').textContent=gr+', '+(config.childName||'Adik')+'! 👋';
-  document.getElementById('star-gold-display').textContent=totalGoldAll();
-  document.getElementById('star-silver-display').textContent=totalSilverAll()+bonusCredits();
+  const B=balances();
+  document.getElementById('wallet-pills').innerHTML=currencies()
+    .map(c=>`<div class="star-pill" title="${c.name}">${c.icon} <span>${B[c.id]||0}</span></div>`).join('');
   document.getElementById('date-bar').textContent=formatDate(new Date());
   renderMascot();
   renderLevelCard('level-card-container');
@@ -1134,7 +1155,7 @@ function renderPeriods(){
       :p.tasks.map(t=>{
         const isReq=t.required!==false;
         const isDone=!!todayData[String(t.id)];
-        const starIcon=isReq?REQ_ICON:BONUS_ICON;
+        const starIcon=curIcon(taskCur(t));
         const starClass=isReq?'star-gold':'star-silver';
         const clickable=!locked||isDone;
         const st=taskStreak(t.id);
@@ -1185,7 +1206,7 @@ window.toggleTask=function(taskId,periodId){
   if(!t)return;
   const key=String(t.id);
   const isReq=t.required!==false;
-  const starIcon=isReq?REQ_ICON:BONUS_ICON;
+  const starIcon=curIcon(taskCur(t));
   if(todayData[key]){delete todayData[key];showToast('-'+t.pts+' '+starIcon+' dibatalkan');}
   else{todayData[key]=t.pts;showToast('+'+t.pts+' '+starIcon+'!');playDing(config.periods.findIndex(x=>x.id===periodId));}
   saveTodayFS();
@@ -1207,10 +1228,10 @@ function renderSummary(){
   const pct=all.length?Math.round(done/all.length*100):0;
   document.getElementById('s-done').textContent=done;
   document.getElementById('s-total').textContent=all.length;
-  document.getElementById('s-gold').textContent=todayGoldStars()+' ⭐';
-  document.getElementById('s-silver').textContent=(todaySilverStars()+todayCreditsTotal())+' 💎';
-  document.getElementById('s-total-gold').textContent=totalGoldAll()+' ⭐';
-  document.getElementById('s-total-silver').textContent=(totalSilverAll()+bonusCredits())+' 💎';
+  document.getElementById('s-gold').textContent=todayGoldStars();
+  document.getElementById('s-silver').textContent=todaySilverStars()+todayCreditsTotal();
+  document.getElementById('s-total-gold').textContent=totalGoldAll();
+  document.getElementById('s-total-silver').textContent=totalSilverAll()+bonusCredits();
   document.getElementById('s-streak').textContent=calcStreak();
   renderBadges();
   renderCustomize();
@@ -1295,7 +1316,7 @@ function renderHistory(){
       const taskRows=p.tasks.map(t=>{
         const isDone=!!h.data[String(t.id)];
         const isReq=t.required!==false;
-        const starIcon=isReq?REQ_ICON:BONUS_ICON;
+        const starIcon=curIcon(taskCur(t));
         return `<div class="hist-task-row">
           <div class="hist-task-dot ${isDone?'done':'miss'}"></div>
           <span class="hist-task-name ${isDone?'done':''}">${t.label}</span>
@@ -1334,8 +1355,8 @@ window.setHistFilter=async function(n,btn){
   btn.classList.add('active');
   if(n===0)await loadHistory(0);
   renderHistory();
-  document.getElementById('s-total-gold').textContent=totalGoldAll()+' ⭐';
-  document.getElementById('s-total-silver').textContent=(totalSilverAll()+bonusCredits())+' 💎';
+  document.getElementById('s-total-gold').textContent=totalGoldAll();
+  document.getElementById('s-total-silver').textContent=totalSilverAll()+bonusCredits();
 };
 
 function calcStreak(){
@@ -1372,14 +1393,22 @@ function buildAdminTaskList(p, pi){
     const reqStyle=req?'background:#FFF3DC;border:1px solid #EF9F27;color:#7a5c00;':'background:#f0f0f0;border:1px solid #ccc;color:#666;';
     return '<div class="admin-task-row" data-pi="'+pi+'" data-ti="'+ti+'">'
       +'<span class="drag-handle" title="Geser untuk pindahkan">⠿</span>'
-      +'<span style="font-size:16px;margin-right:2px;" title="'+(req?'Wajib':'Bonus')+'">'+(req?REQ_ICON:BONUS_ICON)+'</span>'
+      +'<span style="font-size:16px;margin-right:2px;" title="'+(req?'Wajib':'Bonus')+'">'+curIcon(taskCur(t))+'</span>'
       +'<input type="text" value="'+t.label+'" onchange="config.periods['+pi+'].tasks['+ti+'].label=this.value" style="flex:1;font-size:14px;border:none;outline:none;background:transparent;color:var(--text);font-family:inherit;">'
       +'<span style="font-size:12px;color:var(--text3);">pts:</span>'
       +'<input type="number" class="pts-input" value="'+t.pts+'" min="1" max="10" onchange="config.periods['+pi+'].tasks['+ti+'].pts=parseInt(this.value)||1">'
+      +curSelectHTML(taskCur(t),'config.periods['+pi+'].tasks['+ti+'].cur=this.value;renderAdmin()','Mata uang yang didapat')
       +'<button onclick="toggleRequired('+pi+','+ti+')" style="'+reqStyle+'border-radius:8px;font-size:11px;padding:3px 7px;cursor:pointer;font-family:inherit;">'+(req?'Wajib':'Bonus')+'</button>'
       +'<button class="del-btn" onclick="delTask('+pi+','+ti+')">✕</button>'
       +'</div>';
   }).join('')+dropBot;
+}
+
+// Dropdown pemilih mata uang untuk panel Admin.
+function curSelectHTML(selected,onchangeJs,title){
+  return `<select title="${title||'Mata uang'}" style="font-size:15px;border:1px solid var(--border2);border-radius:8px;padding:3px 2px;background:var(--bg);color:var(--text);cursor:pointer;font-family:inherit;" onchange="${onchangeJs}">
+    ${currencies().map(c=>`<option value="${c.id}" ${normCur(selected)===c.id?'selected':''}>${c.icon}</option>`).join('')}
+  </select>`;
 }
 
 function renderAdmin(){
@@ -1390,7 +1419,7 @@ function renderAdmin(){
       <div class="admin-section-header">Umum</div>
       <div class="admin-row"><label>Nama Anak</label><input type="text" id="childNameInput" style="font-size:14px;border:none;outline:none;text-align:right;background:transparent;color:var(--text);font-family:inherit;width:150px;" value="${config.childName||'Adik'}"></div>
       <div class="admin-row"><label>PIN Admin</label><input type="text" inputmode="numeric" maxlength="4" id="newPinInput" style="font-size:14px;border:none;outline:none;text-align:right;background:transparent;color:var(--text);font-family:inherit;width:100px;" placeholder="PIN baru (4 angka)"></div>
-      <div class="admin-row"><label>Hadiah menulis jurnal (💎)</label><input type="number" min="0" value="${config.journalReward||0}" onchange="config.journalReward=parseInt(this.value)||0" class="ach-pts-input"></div>
+      <div class="admin-row"><label>Hadiah menulis jurnal</label><div style="display:flex;gap:6px;align-items:center;"><input type="number" min="0" value="${config.journalReward||0}" onchange="config.journalReward=parseInt(this.value)||0" class="ach-pts-input">${curSelectHTML(config.journalCur||'gem','config.journalCur=this.value;renderAdmin()','Mata uang hadiah jurnal')}</div></div>
       <div class="admin-row">
         <div><div style="font-size:14px;font-weight:600;">Suara &amp; efek</div><div style="font-size:11px;color:var(--text3);">Bunyi saat selesai tugas &amp; perayaan</div></div>
         <label class="toggle"><input type="checkbox" ${config.soundOn!==false?'checked':''} onchange="setConfigFlag('soundOn',this.checked)"><span class="toggle-slider"></span></label>
@@ -1442,8 +1471,31 @@ function renderAdmin(){
       <button class="add-task-btn" onclick="addAchievement()">＋ Tambah Achievement</button>
     </div>
     <div class="admin-section">
+      <div class="admin-section-header">🪙 Mata Uang</div>
+      <div style="padding:10px 16px 4px;font-size:12px;color:var(--text3);">
+        <b>Nilai</b> = berapa satuan terkecil. Contoh: ⭐ nilai 1 dan 🌙 nilai 5 berarti <b>1🌙 = 5⭐</b>.
+        Anak bisa menukar sendiri di layar Hadiah. XP/level dihitung dari nilai ini, jadi menukar tidak menambah atau mengurangi XP.
+      </div>
+      <div id="currency-admin-list">
+        ${currencies().map((c,ci)=>`
+          <div class="ach-admin-item">
+            <select style="font-size:20px;border:1px solid var(--border2);border-radius:8px;padding:2px 4px;background:var(--bg);cursor:pointer;font-family:inherit;" onchange="config.currencies[${ci}].icon=this.value;renderAdmin()" title="Pilih ikon">
+              ${CURRENCY_ICONS.map(ic=>`<option value="${ic}" ${c.icon===ic?'selected':''}>${ic}</option>`).join('')}
+            </select>
+            <input type="text" value="${c.name}" onchange="config.currencies[${ci}].name=this.value" style="flex:1;min-width:70px;font-size:13px;border:none;outline:none;background:transparent;color:var(--text);font-family:inherit;" title="Nama mata uang">
+            <span style="font-size:12px;color:var(--text3);">nilai</span>
+            <input type="number" class="ach-pts-input" value="${curRate(c.id)}" min="1" onchange="config.currencies[${ci}].rate=Math.max(1,parseInt(this.value)||1);renderAdmin()" title="Nilai dalam satuan terkecil">
+            <button class="del-btn" onclick="delCurrency(${ci})">✕</button>
+          </div>`).join('')}
+      </div>
+      <div style="padding:0 16px 8px;font-size:12px;color:var(--text2);">
+        ${exchangeOffers().map(o=>`${o.fromAmt}${curIcon(o.from)} = ${o.toAmt}${curIcon(o.to)}`).filter((v,i)=>i%2===0).join(' · ')||'Tambah minimal 2 mata uang untuk bisa saling ditukar'}
+      </div>
+      <button class="add-task-btn" onclick="addCurrency()">＋ Tambah Mata Uang</button>
+    </div>
+    <div class="admin-section">
       <div class="admin-section-header">🎁 Toko Hadiah</div>
-      <div style="padding:10px 16px 4px;font-size:12px;color:var(--text3);">Hadiah yang bisa ditukar anak dengan bintang. Penukaran perlu PIN orang tua.</div>
+      <div style="padding:10px 16px 4px;font-size:12px;color:var(--text3);">Hadiah yang bisa ditukar anak. Tiap hadiah bisa dihargai dengan mata uang berbeda. Penukaran perlu PIN orang tua.</div>
       <div id="reward-admin-list">
         ${(config.rewards||[]).map((r,ri)=>`
           <div class="ach-admin-item" style="flex-wrap:wrap;">
@@ -1451,8 +1503,8 @@ function renderAdmin(){
               ${REWARD_ICONS.map(ic=>`<option value="${ic}" ${r.icon===ic?'selected':''}>${ic}</option>`).join('')}
             </select>
             <input type="text" value="${r.label}" onchange="config.rewards[${ri}].label=this.value" style="flex:1;min-width:90px;font-size:13px;border:none;outline:none;background:transparent;color:var(--text);font-family:inherit;">
-            <input type="number" class="ach-pts-input" value="${r.cost}" min="1" onchange="config.rewards[${ri}].cost=parseInt(this.value)||1" title="Harga bintang">
-            <span style="font-size:12px;color:var(--text3);">⭐</span>
+            <input type="number" class="ach-pts-input" value="${r.cost}" min="1" onchange="config.rewards[${ri}].cost=parseInt(this.value)||1" title="Harga">
+            ${curSelectHTML(rewardCur(r),`config.rewards[${ri}].cur=this.value;renderAdmin()`,'Dibayar pakai')}
             <button class="del-btn" onclick="delReward(${ri})">✕</button>
             <div style="flex-basis:100%;display:flex;align-items:center;gap:8px;padding-left:2px;">
               <span style="font-size:11px;color:var(--text3);">Stok</span>
@@ -1472,7 +1524,9 @@ function renderAdmin(){
             <span style="flex:1;min-width:110px;font-size:14px;">${w.icon||'🎁'} ${w.label}</span>
             <div style="display:flex;align-items:center;gap:6px;">
               <input type="number" id="wishcost-${w.id}" class="ach-pts-input" placeholder="harga" min="1">
-              <span style="font-size:12px;color:var(--text3);">⭐</span>
+              <select id="wishcur-${w.id}" style="font-size:15px;border:1px solid var(--border2);border-radius:8px;padding:3px 2px;background:var(--bg);color:var(--text);cursor:pointer;font-family:inherit;" title="Mata uang">
+                ${currencies().map(c=>`<option value="${c.id}">${c.icon}</option>`).join('')}
+              </select>
               <button onclick="approveWish('${w.id}')" style="background:var(--c2);color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">Setujui</button>
               <button class="del-btn" onclick="rejectWish('${w.id}')">✕</button>
             </div>
@@ -1489,8 +1543,8 @@ function renderAdmin(){
               ${QUEST_ICONS.map(ic=>`<option value="${ic}" ${q.icon===ic?'selected':''}>${ic}</option>`).join('')}
             </select>
             <input type="text" value="${q.label}" onchange="config.quests[${qi}].label=this.value" style="flex:1;min-width:80px;font-size:13px;border:none;outline:none;background:transparent;color:var(--text);font-family:inherit;">
-            <input type="number" class="ach-pts-input" value="${q.reward}" min="1" onchange="config.quests[${qi}].reward=parseInt(this.value)||1" title="Hadiah 💎">
-            <span style="font-size:12px;color:var(--text3);">💎</span>
+            <input type="number" class="ach-pts-input" value="${q.reward}" min="1" onchange="config.quests[${qi}].reward=parseInt(this.value)||1" title="Jumlah hadiah">
+            ${curSelectHTML(questCur(q),`config.quests[${qi}].cur=this.value;renderAdmin()`,'Mata uang hadiah misi')}
             <select style="font-size:12px;border:1px solid var(--border2);border-radius:8px;padding:4px;background:var(--bg);color:var(--text);font-family:inherit;cursor:pointer;" onchange="config.quests[${qi}].type=this.value">
               <option value="once" ${q.type!=='daily'?'selected':''}>Sekali</option>
               <option value="daily" ${q.type==='daily'?'selected':''}>Harian</option>
@@ -1521,7 +1575,7 @@ function renderAdmin(){
     <div class="admin-section">
       <div class="admin-section-header">⚠️ Penalti</div>
       <div style="padding:10px 16px 4px;font-size:12px;color:var(--text3);">Poin penalti TERPISAH dari bintang &amp; hadiah. Berikan saat anak melanggar.</div>
-      <div class="admin-row"><label>Harga tebus penalti (⭐ / poin)</label><input type="number" min="1" value="${config.penaltyCoinCost||15}" onchange="config.penaltyCoinCost=parseInt(this.value)||1" class="ach-pts-input"></div>
+      <div class="admin-row"><label>Harga tebus penalti (per poin)</label><div style="display:flex;gap:6px;align-items:center;"><input type="number" min="1" value="${config.penaltyCoinCost||15}" onchange="config.penaltyCoinCost=parseInt(this.value)||1" class="ach-pts-input">${curSelectHTML(penaltyCurId(),'config.penaltyCur=this.value;renderAdmin()','Dibayar pakai')}</div></div>
       <div class="admin-row">
         <div><div style="font-size:14px;font-weight:600;">Penalti otomatis</div><div style="font-size:11px;color:var(--text3);">Beri penalti jika tugas wajib terlewat deadline</div></div>
         <label class="toggle"><input type="checkbox" ${config.autoPenalty?'checked':''} onchange="setConfigFlag('autoPenalty',this.checked)"><span class="toggle-slider"></span></label>
@@ -1592,6 +1646,19 @@ function renderAdmin(){
       <div id="past-day-tasks" style="padding:0 8px 12px;"></div>
       <div style="padding:0 16px 14px;">
         <button onclick="resetPastDay(document.getElementById('past-date-picker').value)" style="width:100%;padding:10px;background:var(--c3l);color:var(--c3);border:1px solid var(--c3);border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;">🗑️ Reset semua centang hari ini (hapus data tanggal ini)</button>
+      </div>
+    </div>
+    <div class="admin-section" style="margin-top:12px;">
+      <div class="admin-section-header">♻️ Reset Reward & EXP</div>
+      <div style="padding:10px 16px 4px;font-size:12px;color:var(--text3);">
+        Riwayat centang harian <b>tidak</b> dihapus — reset bekerja dengan menyimpan titik nol baru,
+        jadi grafik &amp; streak tetap utuh. Bisa dipakai untuk memulai "musim" baru.
+      </div>
+      <div style="padding:10px 16px 16px;display:flex;flex-direction:column;gap:8px;">
+        <button class="reset-btn" onclick="resetXP()">🏆 Reset EXP &amp; Level ke 0 <span>(sekarang ${lifetimeEarned()} XP)</span></button>
+        <button class="reset-btn" onclick="resetBalances()">💰 Reset semua saldo mata uang <span>(${currencies().map(c=>(balances()[c.id]||0)+c.icon).join(' ')})</span></button>
+        <button class="reset-btn" onclick="resetRedemptionHistory()">🧾 Hapus riwayat penukaran <span>(${(walletData.redemptions||[]).length} penukaran, saldo tetap)</span></button>
+        <button class="reset-btn danger" onclick="resetEverything()">🔥 RESET TOTAL <span>EXP, saldo, penukaran, penalti, misi &amp; badge</span></button>
       </div>
     </div>
     <div class="admin-section" style="margin-top:12px;">
@@ -1689,7 +1756,82 @@ window.delReward=function(ri){
 window.toggleRewardWeekly=function(ri){ config.rewards[ri].weekly=!config.rewards[ri].weekly; renderAdmin(); };
 window.addReward=function(){
   if(!config.rewards)config.rewards=[];
-  config.rewards.push({id:'r'+Date.now(),icon:'🎁',label:'Hadiah Baru',cost:50});
+  config.rewards.push({id:'r'+Date.now(),icon:'🎁',label:'Hadiah Baru',cost:50,cur:baseCurId()});
+  renderAdmin();
+};
+// ---- RESET REWARD & EXP ----
+// Reset dilakukan lewat "titik nol" (walletData.reset), bukan dengan menghapus riwayat
+// centang harian — sehingga grafik, streak, dan laporan mingguan tetap utuh.
+function ensureResetObj(){
+  if(!walletData.reset||typeof walletData.reset!=='object') walletData.reset={xp:0,balances:{}};
+  if(typeof walletData.reset.xp!=='number') walletData.reset.xp=0;
+  if(!walletData.reset.balances) walletData.reset.balances={};
+  return walletData.reset;
+}
+function zeroBalanceOffsets(){
+  const net=netBalances(), off={};
+  currencies().forEach(c=>{ off[c.id]=net[c.id]||0; });
+  return off;
+}
+async function afterReset(msg){
+  await saveWalletFS();
+  showToast(msg);
+  renderAdmin();
+  renderHome();
+  renderSummary();
+}
+window.resetXP=async function(){
+  if(!confirm('Reset EXP & level jadi 0?\n\nRiwayat centang tidak dihapus — hanya titik hitung XP yang dipindah ke sekarang.'))return;
+  ensureResetObj().xp=lifetimeValue();
+  await afterReset('🏆 EXP direset ke 0');
+};
+window.resetBalances=async function(){
+  if(!confirm('Kosongkan semua saldo mata uang jadi 0?\n\nEXP/level tidak berubah.'))return;
+  ensureResetObj().balances=zeroBalanceOffsets();
+  await afterReset('💰 Semua saldo direset ke 0');
+};
+window.resetRedemptionHistory=async function(){
+  if(!confirm('Hapus semua riwayat penukaran hadiah?\n\nSaldo mata uang TIDAK berubah.'))return;
+  const before=balances();
+  walletData.redemptions=[];
+  const net=netBalances(), off={};
+  currencies().forEach(c=>{ off[c.id]=(net[c.id]||0)-(before[c.id]||0); });
+  ensureResetObj().balances=off;
+  await afterReset('🧾 Riwayat penukaran dihapus');
+};
+window.resetEverything=async function(){
+  const answer=prompt('RESET TOTAL akan mengosongkan EXP, semua saldo, riwayat penukaran, penalti, riwayat misi, dan badge.\n\nRiwayat centang harian tetap aman.\n\nKetik RESET untuk melanjutkan:');
+  if((answer||'').trim().toUpperCase()!=='RESET'){showToast('Reset dibatalkan');return;}
+  walletData.redemptions=[];
+  walletData.penalties=[];
+  walletData.credits=[];
+  walletData.exchanges=[];
+  walletData.questLog=[];
+  walletData.badges=[];
+  walletData.goalRewardId=null;
+  walletData.reset={xp:lifetimeValue(),balances:zeroBalanceOffsets()};
+  _exQty={};
+  await afterReset('🔥 Semua reward & EXP direset');
+};
+
+window.addCurrency=function(){
+  if(!Array.isArray(config.currencies))config.currencies=[];
+  if(config.currencies.length>=6){showToast('Maksimal 6 mata uang');return;}
+  const used=config.currencies.map(c=>c.icon);
+  const icon=CURRENCY_ICONS.find(i=>!used.includes(i))||'🪙';
+  const maxRate=config.currencies.reduce((a,c)=>Math.max(a,curRate(c.id)),1);
+  config.currencies.push({id:'c'+Date.now(),icon,name:'Mata Uang Baru',rate:maxRate*5});
+  renderAdmin();
+};
+window.delCurrency=function(ci){
+  const cs=config.currencies||[];
+  if(cs.length<=1){showToast('Minimal harus ada 1 mata uang');return;}
+  const c=cs[ci]; if(!c)return;
+  const inUse=(config.rewards||[]).some(r=>rewardCur(r)===c.id)
+    ||(config.quests||[]).some(q=>questCur(q)===c.id)
+    ||(config.periods||[]).some(p=>(p.tasks||[]).some(t=>taskCur(t)===c.id));
+  if(inUse&&!confirm('Mata uang "'+c.name+'" masih dipakai tugas/misi/hadiah. Item itu akan otomatis memakai '+cs.find(x=>x.id!==c.id).name+'. Lanjut?'))return;
+  cs.splice(ci,1);
   renderAdmin();
 };
 window.delLevel=function(li){
@@ -1763,6 +1905,7 @@ window.importConfig=async function(event){
     }
     if(!confirm('Import config ini? Semua pengaturan saat ini akan diganti.'))return;
     config=imported; window.config=config;
+    if(!Array.isArray(config.currencies)||!config.currencies.length) config.currencies=JSON.parse(JSON.stringify(DEFAULT_CONFIG.currencies));
     if(!Array.isArray(config.rewards)) config.rewards=JSON.parse(JSON.stringify(DEFAULT_CONFIG.rewards));
     if(!Array.isArray(config.levels)) config.levels=JSON.parse(JSON.stringify(DEFAULT_CONFIG.levels));
     if(!Array.isArray(config.penaltyRules)) config.penaltyRules=JSON.parse(JSON.stringify(DEFAULT_CONFIG.penaltyRules));
@@ -2013,7 +2156,7 @@ window.loadPastDayAdmin=function(dateStr){
       const req=t.required!==false;
       return '<div class="admin-task-row" style="cursor:pointer;" onclick="togglePastTask(\''+dateStr+'\',\''+t.id+'\',this)">'
         +'<div class="task-check" style="width:22px;height:22px;border-radius:6px;border:2px solid '+(isDone?'var(--c1)':'var(--border2)')+';background:'+(isDone?'var(--c1)':'transparent')+';display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">'+(isDone?'✓':'')+'</div>'
-        +'<span style="flex:1;font-size:14px;color:var(--text);">'+(req?REQ_ICON:BONUS_ICON)+' '+t.label+'</span>'
+        +'<span style="flex:1;font-size:14px;color:var(--text);">'+curIcon(taskCur(t))+' '+t.label+'</span>'
         +'<span style="font-size:12px;color:var(--text3);">'+t.pts+'pts</span>'
         +'</div>';
     }).join('');
@@ -2279,7 +2422,7 @@ function renderFocus(){
         return `<div class="focus-task ${isDone?'done':''}" ${clickable?`onclick="toggleTask('${t.id}','${p.id}')"`:''} style="${clickable?'':'opacity:.5;pointer-events:none;'}">
           <div class="focus-check" style="${isDone?'background:'+color+';border-color:'+color:''}">${isDone?'✓':locked?'🔒':''}</div>
           <span class="focus-task-label">${t.label}</span>
-          <span style="font-size:16px;">${isReq?REQ_ICON:BONUS_ICON}</span>
+          <span style="font-size:16px;">${curIcon(taskCur(t))}</span>
         </div>`;
       }).join('')
     : '<div class="focus-empty">Belum ada tugas di periode ini</div>';
@@ -2307,11 +2450,94 @@ function getLevelInfo(){
   const pct=next?Math.max(0,Math.min(100,Math.round((xp-curBase)/(nextAt-curBase)*100))):100;
   return {xp,levelNum:idx+1,cur,next,pct,nextAt,curBase,isMax:!next};
 }
-function redemptionsTotal(){ return (walletData.redemptions||[]).reduce((a,r)=>a+(r.cost||0),0); }
+// ---- MATA UANG (multi-currency) ----
+// Setiap item (tugas, misi, jurnal, hadiah) punya `cur` = id mata uang.
+// Data lama tanpa `cur` otomatis dipetakan: tugas wajib→star, bonus→gem, misi/jurnal→gem, hadiah→star.
+function currencies(){ const c=config.currencies; return (Array.isArray(c)&&c.length)?c:DEFAULT_CONFIG.currencies; }
+function curById(id){ const cs=currencies(); return cs.find(c=>c.id===id)||cs[0]; }
+function normCur(id){ return curById(id).id; }
+function curIcon(id){ return curById(id).icon||'⭐'; }
+function curName(id){ return curById(id).name||'Poin'; }
+function curRate(id){ return Math.max(1, parseInt(curById(id).rate)||1); }
+function baseCurId(){ return currencies().slice().sort((a,b)=>curRate(a.id)-curRate(b.id))[0].id; }
+function taskCur(t){ return normCur(t.cur || (t.required!==false?'star':'gem')); }
+function questCur(q){ return normCur(q.cur||'gem'); }
+function rewardCur(r){ return normCur(r.cur||'star'); }
+function creditCur(c){ return normCur(c.cur||'gem'); }
+function penaltyCurId(){ return normCur(config.penaltyCur||'star'); }
+function amtHTML(n,cur){ return n+' '+curIcon(cur); }
+
+// Total yang PERNAH didapat, per mata uang (tidak pernah turun karena belanja).
+function earnedByCur(){
+  const out={}; currencies().forEach(c=>out[c.id]=0);
+  const add=(cur,n)=>{ const k=normCur(cur); out[k]=(out[k]||0)+(n||0); };
+  const addDay=(data,date)=>{ allTasksForDay(date).forEach(t=>{ if(data[String(t.id)]) add(taskCur(t),t.pts); }); };
+  historyCache.filter(h=>h.date!==todayKey()).forEach(h=>addDay(h.data,new Date(h.date+'T00:00:00')));
+  addDay(todayData,new Date());
+  (walletData.credits||[]).forEach(c=>add(creditCur(c),c.amount));
+  return out;
+}
+function spentByCur(){
+  const out={};
+  (walletData.redemptions||[]).forEach(r=>{ const k=normCur(r.cur||'star'); out[k]=(out[k]||0)+(r.cost||0); });
+  return out;
+}
+// Penukaran antar mata uang: kurangi sumber, tambah tujuan. Nilai total tetap.
+function exchangeByCur(){
+  const out={};
+  (walletData.exchanges||[]).forEach(x=>{
+    const f=normCur(x.from), t=normCur(x.to);
+    out[f]=(out[f]||0)-(x.fromAmt||0);
+    out[t]=(out[t]||0)+(x.toAmt||0);
+  });
+  return out;
+}
+function resetOffsets(){ return (walletData.reset&&walletData.reset.balances)||{}; }
+// Saldo yang bisa dibelanjakan, per mata uang.
+function balances(){
+  const e=earnedByCur(), s=spentByCur(), x=exchangeByCur(), o=resetOffsets();
+  const out={};
+  currencies().forEach(c=>{
+    out[c.id]=Math.max(0,(e[c.id]||0)+(x[c.id]||0)-(s[c.id]||0)-(o[c.id]||0));
+  });
+  return out;
+}
+function balanceOf(id){ return balances()[normCur(id)]||0; }
+// Saldo mentah (boleh negatif) — dipakai saat menghitung offset reset.
+function netBalances(){
+  const e=earnedByCur(), s=spentByCur(), x=exchangeByCur();
+  const out={};
+  currencies().forEach(c=>{ out[c.id]=(e[c.id]||0)+(x[c.id]||0)-(s[c.id]||0); });
+  return out;
+}
+
+// XP = nilai total semua mata uang yang pernah didapat, dikonversi ke satuan dasar.
+function lifetimeValue(){
+  const e=earnedByCur();
+  return currencies().reduce((a,c)=>a+(e[c.id]||0)*curRate(c.id),0);
+}
+function redemptionsTotal(){ return (walletData.redemptions||[]).reduce((a,r)=>a+(r.cost||0)*curRate(r.cur||'star'),0); }
 function bonusCredits(){ return (walletData.credits||[]).reduce((a,c)=>a+(c.amount||0),0); }
 function todayCreditsTotal(){ return (walletData.credits||[]).filter(c=>c.date===todayKey()).reduce((a,c)=>a+(c.amount||0),0); }
-function lifetimeEarned(){ return totalStarsAll()+bonusCredits(); }
-function currentBalance(){ return Math.max(0, lifetimeEarned()-redemptionsTotal()); }
+function lifetimeEarned(){ return Math.max(0, lifetimeValue()-((walletData.reset&&walletData.reset.xp)||0)); }
+function currentBalance(){ return balanceOf(penaltyCurId()); }
+
+// Tawaran tukar: antar mata uang bertetangga (urut nilai), dua arah.
+function gcd2(a,b){ while(b){ const t=a%b; a=b; b=t; } return a||1; }
+function exchangeOffers(){
+  const cs=currencies().slice().sort((a,b)=>curRate(a.id)-curRate(b.id));
+  const out=[];
+  for(let i=0;i<cs.length-1;i++){
+    const lo=cs[i], hi=cs[i+1];
+    if(lo.id===hi.id) continue;
+    const rl=curRate(lo.id), rh=curRate(hi.id);
+    const g=gcd2(rh,rl);
+    const loAmt=rh/g, hiAmt=rl/g; // loAmt × lo  senilai  hiAmt × hi
+    out.push({from:lo.id,to:hi.id,fromAmt:loAmt,toAmt:hiAmt});
+    out.push({from:hi.id,to:lo.id,fromAmt:hiAmt,toAmt:loAmt});
+  }
+  return out;
+}
 function redeemedCount(rewardId){ return (walletData.redemptions||[]).filter(r=>r.rewardId===rewardId).length; }
 function rewardSoldOut(r){ return r.stock!=null && redeemedCount(r.id)>=r.stock; }
 function redeemedThisWeek(rewardId){
@@ -2341,14 +2567,64 @@ function levelCardHTML(){
 }
 function renderLevelCard(id){ const el=document.getElementById(id); if(el) el.innerHTML=levelCardHTML(); }
 
+// ---- PENUKARAN MATA UANG (manual) ----
+let _exQty={};
+function exchangeCardHTML(B){
+  const offers=exchangeOffers();
+  if(offers.length<2) return '';
+  const rows=offers.map((o,i)=>{
+    const bal=B[o.from]||0;
+    const max=Math.floor(bal/o.fromAmt);
+    const q=Math.max(1,Math.min(_exQty[i]||1,Math.max(1,max)));
+    const can=max>=q;
+    return `<div class="redeem-row" style="gap:8px;">
+      <div class="redeem-info" style="flex:1;min-width:0;">
+        <div style="font-weight:700;">${o.fromAmt*q} ${curIcon(o.from)} → ${o.toAmt*q} ${curIcon(o.to)}</div>
+        <div class="redeem-date">${curName(o.from)} jadi ${curName(o.to)} · punya ${bal} ${curIcon(o.from)}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
+        <button class="ex-step" onclick="bumpExQty(${i},-1)">−</button>
+        <span style="min-width:20px;text-align:center;font-weight:700;font-size:14px;">${q}</span>
+        <button class="ex-step" onclick="bumpExQty(${i},1)">＋</button>
+      </div>
+      <button class="reward-btn" style="width:auto;padding:7px 14px;flex-shrink:0;" ${can?'':'disabled'} onclick="doExchange(${i})">Tukar</button>
+    </div>`;
+  }).join('');
+  return `<div class="card"><h2>🔄 Tukar Mata Uang</h2>
+    <div style="font-size:12px;color:var(--text3);margin:-4px 0 8px;">Punya banyak yang kecil? Tukar jadi yang besar!</div>
+    ${rows}</div>`;
+}
+window.bumpExQty=function(i,d){
+  const o=exchangeOffers()[i]; if(!o)return;
+  const max=Math.floor((balanceOf(o.from))/o.fromAmt);
+  _exQty[i]=Math.max(1,Math.min((_exQty[i]||1)+d,Math.max(1,max)));
+  renderRewards();
+};
+window.doExchange=async function(i){
+  const o=exchangeOffers()[i]; if(!o)return;
+  const q=Math.max(1,_exQty[i]||1);
+  const need=o.fromAmt*q;
+  if(balanceOf(o.from)<need){showToast(curName(o.from)+' belum cukup');return;}
+  walletData.exchanges=walletData.exchanges||[];
+  walletData.exchanges.push({id:'ex'+Date.now(),from:o.from,to:o.to,fromAmt:need,toAmt:o.toAmt*q,date:todayKey(),ts:Date.now()});
+  _exQty[i]=1;
+  await saveWalletFS();
+  playDing();
+  showToast('🔄 '+need+' '+curIcon(o.from)+' → '+(o.toAmt*q)+' '+curIcon(o.to));
+  renderRewards();
+  renderHome();
+};
+
 function renderRewards(){
   const cont=document.getElementById('rewards-content');
   if(!cont)return;
-  const bal=currentBalance();
+  const B=balances();
   const rewards=config.rewards||[];
   const goalId=walletData.goalRewardId;
   const grid=rewards.length
     ? rewards.map(r=>{
+        const rc=rewardCur(r);
+        const bal=B[rc]||0;
         const soldOut=rewardSoldOut(r);
         const weeklyUsed=r.weekly&&redeemedThisWeek(r.id);
         const unavail=soldOut||weeklyUsed;
@@ -2360,7 +2636,7 @@ function renderRewards(){
         return `<div class="reward-card">
           <div class="reward-ic">${r.icon||'🎁'}</div>
           <div class="reward-name">${r.label}</div>
-          <div class="reward-cost">${r.cost} ⭐</div>
+          <div class="reward-cost">${r.cost} ${curIcon(rc)}</div>
           ${stockLine}${weeklyLine}
           <button class="reward-btn" ${afford?'':'disabled'} onclick="redeemReward('${r.id}')">${btnLabel}</button>
           <button class="goal-toggle" onclick="${isGoal?`clearGoal()`:`setGoal('${r.id}')`}">${isGoal?'★ Targetku':'☆ Jadikan target'}</button>
@@ -2368,11 +2644,15 @@ function renderRewards(){
       }).join('')
     : '<div class="empty-period">Belum ada hadiah. Tambahkan lewat menu Admin.</div>';
   const goalReward=goalId?rewards.find(r=>r.id===goalId):null;
-  const goalCard=goalReward?`<div class="card goal-card">
-    <h2 style="margin-bottom:10px;">🎯 Targetku: ${goalReward.icon||'🎁'} ${goalReward.label}</h2>
-    <div class="goal-bar-bg"><div class="goal-bar-fill" style="width:${Math.min(100,Math.round(bal/goalReward.cost*100))}%"></div></div>
-    <div style="font-size:13px;color:var(--text2);margin-top:6px;">${bal} / ${goalReward.cost} ⭐ ${bal>=goalReward.cost?'— sudah cukup! 🎉':''}</div>
-  </div>`:'';
+  let goalCard='';
+  if(goalReward){
+    const gc=rewardCur(goalReward), gbal=B[gc]||0;
+    goalCard=`<div class="card goal-card">
+      <h2 style="margin-bottom:10px;">🎯 Targetku: ${goalReward.icon||'🎁'} ${goalReward.label}</h2>
+      <div class="goal-bar-bg"><div class="goal-bar-fill" style="width:${Math.min(100,Math.round(gbal/Math.max(1,goalReward.cost)*100))}%"></div></div>
+      <div style="font-size:13px;color:var(--text2);margin-top:6px;">${gbal} / ${goalReward.cost} ${curIcon(gc)} ${gbal>=goalReward.cost?'— sudah cukup! 🎉':''}</div>
+    </div>`;
+  }
   const reds=(walletData.redemptions||[]).slice().sort((a,b)=>(b.ts||0)-(a.ts||0));
   const histHtml=reds.length
     ? reds.map(r=>{
@@ -2380,7 +2660,7 @@ function renderRewards(){
         return `<div class="redeem-row">
           <span class="redeem-ic">${r.icon||'🎁'}</span>
           <div class="redeem-info"><div>${r.label}</div><div class="redeem-date">${formatDateShort(d)}</div></div>
-          <span class="redeem-cost">-${r.cost} ⭐</span>
+          <span class="redeem-cost">-${r.cost} ${curIcon(r.cur||'star')}</span>
           ${adminUnlocked?`<button class="del-btn" onclick="refundRedeem('${r.id}')" title="Batalkan & kembalikan bintang">↩️</button>`:''}
         </div>`;
       }).join('')
@@ -2393,13 +2673,20 @@ function renderRewards(){
         ${adminUnlocked?`<button class="del-btn" onclick="rejectWish('${w.id}')">✕</button>`:'<span class="wish-status">⏳</span>'}
       </div>`).join('')
     : '<div style="color:var(--text3);font-size:13px;text-align:center;padding:8px;">Belum ada permintaan. Tekan tombol di bawah untuk meminta hadiah baru.</div>';
+  const walletHtml=currencies().map(c=>
+    `<div style="flex:1;min-width:80px;text-align:center;">
+      <div style="font-size:26px;line-height:1.1;">${c.icon}</div>
+      <div style="font-size:22px;font-weight:800;color:var(--text);">${B[c.id]||0}</div>
+      <div style="font-size:11px;color:var(--text3);">${c.name}</div>
+    </div>`).join('');
   cont.innerHTML=`
     ${levelCardHTML()}
     <div class="balance-hero">
-      <div class="balance-num">${bal} ⭐</div>
-      <div class="balance-lbl">bintang bisa kamu tukar dengan hadiah</div>
+      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">${walletHtml}</div>
+      <div class="balance-lbl" style="margin-top:10px;">dompetmu — tukarkan dengan hadiah di bawah</div>
     </div>
     ${goalCard}
+    ${exchangeCardHTML(B)}
     <div class="card"><h2>🎁 Toko Hadiah</h2><div class="reward-grid">${grid}</div></div>
     <div class="card"><h2>✨ Permintaan Hadiahku</h2>${wishesHtml}
       <button onclick="openWishModal()" style="width:100%;margin-top:10px;padding:11px;background:var(--bg);color:var(--c1);border:1.5px dashed var(--c1);border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;">＋ Minta Hadiah Baru</button>
@@ -2414,13 +2701,14 @@ window.redeemReward=function(id){
   const r=(config.rewards||[]).find(x=>String(x.id)===String(id));
   if(!r)return;
   if(rewardUnavailable(r)){showToast(rewardSoldOut(r)?'Stok habis':'Sudah ditukar minggu ini');return;}
-  if(currentBalance()<r.cost){showToast('Bintang belum cukup');return;}
+  const rc=rewardCur(r);
+  if(balanceOf(rc)<r.cost){showToast(curName(rc)+' belum cukup');return;}
   _pendingRedeem=r;
   document.getElementById('redeem-info').innerHTML=
     `<div style="text-align:center;margin-bottom:14px;">
       <div style="font-size:52px;line-height:1;">${r.icon||'🎁'}</div>
       <div style="font-weight:700;font-size:16px;margin-top:6px;">${r.label}</div>
-      <div style="color:var(--star);font-weight:700;margin-top:2px;">${r.cost} ⭐</div>
+      <div style="color:var(--star);font-weight:700;margin-top:2px;">${r.cost} ${curIcon(rc)}</div>
     </div>`;
   document.getElementById('redeem-pin').value='';
   document.getElementById('redeem-error').textContent='';
@@ -2437,9 +2725,10 @@ window.confirmRedeem=async function(){
   const pin=document.getElementById('redeem-pin').value.trim();
   if(pin!==config.pin){document.getElementById('redeem-error').textContent='PIN salah';return;}
   if(rewardUnavailable(r)){document.getElementById('redeem-error').textContent=rewardSoldOut(r)?'Stok habis':'Sudah ditukar minggu ini';return;}
-  if(currentBalance()<r.cost){document.getElementById('redeem-error').textContent='Bintang tidak cukup';return;}
+  const rc=rewardCur(r);
+  if(balanceOf(rc)<r.cost){document.getElementById('redeem-error').textContent=curName(rc)+' tidak cukup';return;}
   walletData.redemptions=walletData.redemptions||[];
-  walletData.redemptions.push({id:'rd'+Date.now(),rewardId:r.id,label:r.label,icon:r.icon||'🎁',cost:r.cost,date:todayKey(),ts:Date.now()});
+  walletData.redemptions.push({id:'rd'+Date.now(),rewardId:r.id,label:r.label,icon:r.icon||'🎁',cost:r.cost,cur:rc,date:todayKey(),ts:Date.now()});
   await saveWalletFS();
   closeRedeemModal();
   playDing();
@@ -2450,7 +2739,7 @@ window.confirmRedeem=async function(){
 function showRedeemCongrats(r){
   document.getElementById('congrats-emoji').textContent=r.icon||'🎁';
   document.getElementById('congrats-title').textContent='Hadiah Ditukar! 🎉';
-  document.getElementById('congrats-sub').textContent=`Selamat! Kamu menukar ${r.cost} bintang untuk "${r.label}". Nikmati hadiahmu, ya!`;
+  document.getElementById('congrats-sub').textContent=`Selamat! Kamu menukar ${r.cost} ${curName(rewardCur(r))} untuk "${r.label}". Nikmati hadiahmu, ya!`;
   document.getElementById('congrats-overlay').classList.add('show');
   celebrate();
 }
@@ -2496,7 +2785,7 @@ function penaltyCardHTML(){
       </div>
     </div>
     <div style="margin-top:10px;">${logHtml}</div>
-    ${t>0?`<button onclick="openPenaltyRedeem()" style="width:100%;margin-top:12px;padding:10px;background:var(--c1l);color:var(--c1d);border:1px solid var(--c1);border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;">⚖️ Tebus penalti dengan bintang (${penaltyCoinCost()}⭐/poin)</button>`:''}
+    ${t>0?`<button onclick="openPenaltyRedeem()" style="width:100%;margin-top:12px;padding:10px;background:var(--c1l);color:var(--c1d);border:1px solid var(--c1);border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;">⚖️ Tebus penalti (${penaltyCoinCost()}${curIcon(penaltyCurId())}/poin)</button>`:''}
   </div>`;
 }
 function renderPenaltyCard(){ const el=document.getElementById('penalty-card-container'); if(el) el.innerHTML=penaltyCardHTML(); }
@@ -2579,7 +2868,7 @@ window.openPenaltyRedeem=function(){
   const amtEl=document.getElementById('penalty-redeem-amount');
   amtEl.max=t; amtEl.value=t;
   document.getElementById('penalty-redeem-info').innerHTML=
-    `<div style="text-align:center;margin-bottom:8px;"><div style="font-size:40px;">⚖️</div><div style="font-size:13px;color:var(--text2);margin-top:4px;">Poin penalti saat ini: <b>${t}</b><br>Harga: <b>${penaltyCoinCost()} ⭐</b> per poin</div></div>`;
+    `<div style="text-align:center;margin-bottom:8px;"><div style="font-size:40px;">⚖️</div><div style="font-size:13px;color:var(--text2);margin-top:4px;">Poin penalti saat ini: <b>${t}</b><br>Harga: <b>${penaltyCoinCost()} ${curIcon(penaltyCurId())}</b> per poin</div></div>`;
   document.getElementById('penalty-redeem-pin').value='';
   document.getElementById('penalty-redeem-error').textContent='';
   updatePenaltyRedeemCost();
@@ -2592,7 +2881,7 @@ window.updatePenaltyRedeemCost=function(){
   const cost=amt*penaltyCoinCost();
   const bal=currentBalance();
   document.getElementById('penalty-redeem-cost').innerHTML=
-    `Total biaya: <span style="color:var(--star);">${cost} ⭐</span> · bintangmu: ${bal} ⭐`+(cost>bal?' <span style="color:#E24B4A;">(kurang)</span>':'');
+    `Total biaya: <span style="color:var(--star);">${cost} ${curIcon(penaltyCurId())}</span> · punyamu: ${bal} ${curIcon(penaltyCurId())}`+(cost>bal?' <span style="color:#E24B4A;">(kurang)</span>':'');
 };
 window.closePenaltyRedeemModal=function(){document.getElementById('penalty-redeem-modal').classList.remove('show');};
 window.confirmPenaltyRedeem=async function(){
@@ -2602,10 +2891,10 @@ window.confirmPenaltyRedeem=async function(){
   const cost=amt*penaltyCoinCost();
   const err=document.getElementById('penalty-redeem-error');
   if(document.getElementById('penalty-redeem-pin').value.trim()!==config.pin){err.textContent='PIN salah';return;}
-  if(cost>currentBalance()){err.textContent='Bintang tidak cukup';return;}
+  if(cost>currentBalance()){err.textContent=curName(penaltyCurId())+' tidak cukup';return;}
   reducePenaltyMarks(amt);
   walletData.redemptions=walletData.redemptions||[];
-  walletData.redemptions.push({id:'rd'+Date.now(),label:'Tebus penalti ('+amt+' poin)',icon:'⚖️',cost,date:todayKey(),ts:Date.now(),type:'penalty'});
+  walletData.redemptions.push({id:'rd'+Date.now(),label:'Tebus penalti ('+amt+' poin)',icon:'⚖️',cost,cur:penaltyCurId(),date:todayKey(),ts:Date.now(),type:'penalty'});
   await saveWalletFS();
   closePenaltyRedeemModal();
   showToast('⚖️ '+amt+' poin penalti ditebus');
@@ -2685,9 +2974,10 @@ window.saveJournal=async function(){
   const alreadyRewarded=(walletData.credits||[]).some(c=>c.source==='journal'&&c.date===todayKey());
   if(reward>0&&!alreadyRewarded){
     walletData.credits=walletData.credits||[];
-    walletData.credits.push({id:'c'+Date.now(),source:'journal',label:'Menulis jurnal',amount:reward,date:todayKey(),ts:Date.now()});
+    const jc=normCur(config.journalCur||'gem');
+    walletData.credits.push({id:'c'+Date.now(),source:'journal',label:'Menulis jurnal',amount:reward,cur:jc,date:todayKey(),ts:Date.now()});
     await saveWalletFS();
-    showToast('📔 Jurnal tersimpan! +'+reward+' 💎');
+    showToast('📔 Jurnal tersimpan! +'+reward+' '+curIcon(jc));
   } else {
     showToast('📔 Jurnal tersimpan!');
   }
@@ -2724,13 +3014,15 @@ window.approveWish=async function(id){
   if(!w)return;
   const costEl=document.getElementById('wishcost-'+id);
   const cost=parseInt(costEl?costEl.value:'')||0;
-  if(cost<1){if(costEl)costEl.focus();showToast('Tentukan harga bintang dulu');return;}
+  if(cost<1){if(costEl)costEl.focus();showToast('Tentukan harga dulu');return;}
+  const curEl=document.getElementById('wishcur-'+id);
+  const cur=normCur(curEl?curEl.value:'star');
   if(!config.rewards)config.rewards=[];
-  config.rewards.push({id:'r'+Date.now(),icon:w.icon||'🎁',label:w.label,cost});
+  config.rewards.push({id:'r'+Date.now(),icon:w.icon||'🎁',label:w.label,cost,cur});
   walletData.wishlist=(walletData.wishlist||[]).filter(x=>String(x.id)!==String(id));
   await saveConfigFS();
   await saveWalletFS();
-  showToast('✓ Hadiah ditambahkan ke toko ('+cost+'⭐)');
+  showToast('✓ Hadiah ditambahkan ke toko ('+cost+curIcon(cur)+')');
   renderAdmin();
 };
 window.rejectWish=async function(id){
@@ -2756,7 +3048,7 @@ function renderQuests(){
     const done=questDone(q);
     return `<div class="quest-row ${done?'done':''}" ${done?'':`onclick="completeQuest('${q.id}')"`}>
       <span class="quest-ic">${q.icon||'🎯'}</span>
-      <div class="quest-info"><div class="quest-label">${q.label}</div><div class="quest-reward">+${q.reward||0} 💎${q.type==='daily'?' · setiap hari':''}</div></div>
+      <div class="quest-info"><div class="quest-label">${q.label}</div><div class="quest-reward">+${q.reward||0} ${curIcon(questCur(q))}${q.type==='daily'?' · setiap hari':''}</div></div>
       <span class="quest-check">${done?'✓':'›'}</span>
     </div>`;
   }).join('')}</div>`;
@@ -2767,12 +3059,12 @@ window.completeQuest=async function(id){
   walletData.questLog=walletData.questLog||[];
   walletData.credits=walletData.credits||[];
   walletData.questLog.push({questId:q.id,date:todayKey(),ts:Date.now()});
-  walletData.credits.push({id:'c'+Date.now(),source:'quest',label:q.label,amount:q.reward||0,date:todayKey(),ts:Date.now()});
+  walletData.credits.push({id:'c'+Date.now(),source:'quest',label:q.label,amount:q.reward||0,cur:questCur(q),date:todayKey(),ts:Date.now()});
   await saveWalletFS();
-  showToast('🎯 Misi selesai! +'+(q.reward||0)+' 💎');
+  showToast('🎯 Misi selesai! +'+(q.reward||0)+' '+curIcon(questCur(q)));
   document.getElementById('congrats-emoji').textContent=q.icon||'🎯';
   document.getElementById('congrats-title').textContent='Misi Selesai! 🎉';
-  document.getElementById('congrats-sub').textContent=`Kamu menyelesaikan "${q.label}" dan mendapat ${q.reward||0} 💎!`;
+  document.getElementById('congrats-sub').textContent=`Kamu menyelesaikan "${q.label}" dan mendapat ${q.reward||0} ${curIcon(questCur(q))}!`;
   document.getElementById('congrats-overlay').classList.add('show');
   celebrate();
   renderHome();
