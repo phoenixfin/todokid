@@ -78,4 +78,16 @@ After editing the root `index.html`, just run `npm run build:apk` again and rein
 ```
 npm install && npm run copyweb && npx cap add android
 ```
-Then re-add `google-services.json`.
+Then redo these local edits (they live inside the gitignored `android/`):
+1. Re-add `google-services.json` at `android/app/`.
+2. `android/local.properties` → `sdk.dir=C:/Users/ThinkPad/AppData/Local/Android/Sdk`
+   (forward slashes — backslashes break it).
+3. `android/gradle/wrapper/gradle-wrapper.properties` → use `gradle-8.7-all.zip`
+   (8.2.1 fails on Java 21).
+4. `android/variables.gradle` → add `rgcfaIncludeGoogle = true` inside `ext { }`.
+   **Required** — without it the Google Sign-In classes (play-services-auth) are
+   compiled but NOT packaged, and the app crashes instantly on launch.
+
+Build with `JAVA_HOME` pointing at Android Studio's JBR:
+`export JAVA_HOME="C:\Program Files\Android\Android Studio\jbr"` then
+`cd android && ./gradlew.bat :app:assembleDebug --no-daemon`.
