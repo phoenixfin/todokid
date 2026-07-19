@@ -91,3 +91,21 @@ Then redo these local edits (they live inside the gitignored `android/`):
 Build with `JAVA_HOME` pointing at Android Studio's JBR:
 `export JAVA_HOME="C:\Program Files\Android\Android Studio\jbr"` then
 `cd android && ./gradlew.bat :app:assembleDebug --no-daemon`.
+
+### Building from Git Bash
+`npm run build:apk` does **not** work in Git Bash — npm runs the script through `sh`,
+where the bare `gradlew.bat` in the script resolves to nothing ("not recognized as an
+internal or external command"). Two rules:
+- Invoke the wrapper as `./gradlew.bat`, never bare `gradlew.bat`.
+- `JAVA_HOME` must use the **Windows** path (`C:\Program Files\...`) because gradlew.bat
+  reads it, but adding it to `PATH` needs the **POSIX** form (`/c/Program Files/...`).
+  Mixing them up gives `java: command not found`.
+
+So from Git Bash the working sequence is:
+```
+cd native && npm run copyweb && npx cap sync android
+cd android
+export JAVA_HOME="C:\Program Files\Android\Android Studio\jbr"
+./gradlew.bat :app:assembleDebug --no-daemon
+```
+From cmd.exe / PowerShell, `npm run build:apk` works as written.
