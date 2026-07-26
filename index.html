@@ -5,7 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Tugasku">
+<meta name="theme-color" content="#7F77DD">
+<link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%237F77DD'/><text y='46' x='10' font-size='40'>⭐</text></svg>">
+<link rel="apple-touch-icon" href="icon.svg">
 <title>Tugas Harianku</title>
 <style>
 :root {
@@ -3273,6 +3277,19 @@ onAuthStateChanged(auth,async(user)=>{
     document.getElementById('login-screen').style.display='flex';
   }
 });
+</script>
+<script>
+// Daftarkan service worker → PWA bisa di-install & jalan offline.
+// Dilewati di WebView Capacitor (APK) dan saat bukan http/https.
+if ('serviceWorker' in navigator
+    && location.protocol.startsWith('http')
+    && !(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform())) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('sw.js').catch(function (err) {
+      console.warn('SW gagal daftar:', err);
+    });
+  });
+}
 </script>
 </body>
 </html>

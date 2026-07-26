@@ -1,0 +1,26 @@
+{
+  "name": "Tugas Harianku",
+  "short_name": "Tugasku",
+  "description": "Checklist tugas harian, bintang, dan hadiah untuk anak.",
+  "lang": "id",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#7F77DD",
+  "theme_color": "#7F77DD",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-maskable.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "maskable"
+    }
+  ]
+}
