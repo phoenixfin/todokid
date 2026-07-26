@@ -5,8 +5,11 @@
       "firebase.json",
       ".firebaserc",
       "**/.*",
+      ".git/**",
+      ".claude/**",
       "**/node_modules/**",
-      "native/**"
+      "native/**",
+      "PWA.md"
     ],
     "headers": [
       {
