@@ -1,0 +1,5 @@
+# Cache lokal Firebase CLI (hash file hosting) — bukan bagian sumber
+.firebase/
+
+# Konfigurasi lokal Claude Code (izin tool, dev server) — tidak untuk dibagikan
+.claude/
