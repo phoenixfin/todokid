@@ -1,4 +1,7 @@
 {
+  "firestore": {
+    "rules": "firestore.rules"
+  },
   "hosting": {
     "public": ".",
     "ignore": [
@@ -9,7 +12,8 @@
       ".claude/**",
       "**/node_modules/**",
       "native/**",
-      "PWA.md"
+      "PWA.md",
+      "firestore.rules"
     ],
     "headers": [
       {
